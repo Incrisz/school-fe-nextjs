@@ -6,6 +6,8 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BACKEND_URL } from "@/lib/config";
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -22,6 +24,7 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const updateField = (
     key: keyof typeof formData,
@@ -31,11 +34,20 @@ export default function RegisterPage() {
       ...prev,
       [key]: value,
     }));
+    if (key === "email" && emailError && emailPattern.test(value)) {
+      setEmailError(null);
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setEmailError(null);
+
+    if (!emailPattern.test(formData.email)) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
 
     if (formData.password !== formData.password_confirmation) {
       setError("Passwords do not match.");
@@ -136,15 +148,22 @@ export default function RegisterPage() {
                 </div>
                 <div className="col-lg-6 col-12 form-group">
                   <label htmlFor="email">School Email *</label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="Enter school email"
-                    className="form-control"
-                    required
-                    value={formData.email}
-                    onChange={(event) => updateField("email", event.target.value)}
-                  />
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="Enter school email"
+                  className={`form-control${emailError ? " is-invalid" : ""}`}
+                  required
+                  value={formData.email}
+                  onChange={(event) => updateField("email", event.target.value)}
+                  aria-invalid={emailError ? "true" : undefined}
+                  aria-describedby={emailError ? "register-email-error" : undefined}
+                />
+                {emailError ? (
+                  <div id="register-email-error" className="invalid-feedback">
+                    {emailError}
+                  </div>
+                ) : null}
                 </div>
                 <div className="col-lg-6 col-12 form-group">
                   <label htmlFor="address">Address *</label>

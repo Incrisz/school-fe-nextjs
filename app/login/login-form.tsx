@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -12,14 +14,21 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setEmailError(null);
 
     if (!email || !password) {
       setError("Please enter both email and password.");
+      return;
+    }
+
+    if (!emailPattern.test(email)) {
+      setEmailError("Please enter a valid email address.");
       return;
     }
 
@@ -60,12 +69,25 @@ export function LoginForm() {
           id="email"
           type="email"
           placeholder="Enter email"
-          className="form-control"
+          className={`form-control${emailError ? " is-invalid" : ""}`}
           required
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            const value = event.target.value;
+            setEmail(value);
+            if (emailError && emailPattern.test(value)) {
+              setEmailError(null);
+            }
+          }}
+          aria-invalid={emailError ? "true" : undefined}
+          aria-describedby={emailError ? "login-email-error" : undefined}
         />
         <i className="far fa-envelope" />
+        {emailError ? (
+          <div id="login-email-error" className="invalid-feedback">
+            {emailError}
+          </div>
+        ) : null}
       </div>
       <div className="form-group position-relative">
         <label htmlFor="password">Password</label>
