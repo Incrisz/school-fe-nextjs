@@ -19,14 +19,14 @@ import {
 } from "@/lib/subjectAssignments";
 
 interface AssignmentForm {
-  subject_id: string;
+  subjectIds: string[];
   school_class_id: string;
   class_arm_id: string;
   class_section_id: string;
 }
 
 const initialForm: AssignmentForm = {
-  subject_id: "",
+  subjectIds: [],
   school_class_id: "",
   class_arm_id: "",
   class_section_id: "",
@@ -48,6 +48,12 @@ const initialFilters: AssignmentFilters = {
 
 type ArmsCache = Record<string, ClassArm[]>;
 type SectionsCache = Record<string, ClassArmSection[]>;
+type FeedbackKind = "success" | "danger" | "warning";
+
+interface FormFeedbackState {
+  type: FeedbackKind;
+  message: string;
+}
 
 export default function AssignSubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -66,7 +72,7 @@ export default function AssignSubjectsPage() {
   const [listData, setListData] = useState<SubjectAssignmentListResponse | null>(null);
   const [assignments, setAssignments] = useState<SubjectAssignment[]>([]);
   const [loadingList, setLoadingList] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formFeedback, setFormFeedback] = useState<FormFeedbackState | null>(null);
   const [listError, setListError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -79,6 +85,43 @@ export default function AssignSubjectsPage() {
           : subject.name,
       })),
     [subjects],
+  );
+
+  const subjectLabelMap = useMemo(() => {
+    const map = new Map<string, string>();
+    subjectOptions.forEach((option) => {
+      map.set(option.value, option.label);
+    });
+    return map;
+  }, [subjectOptions]);
+
+  const selectedSubjectSet = useMemo(
+    () => new Set(form.subjectIds),
+    [form.subjectIds],
+  );
+
+  const handleSubjectToggle = useCallback(
+    (subjectId: string, checked: boolean) => {
+      setForm((prev) => {
+        let nextIds: string[];
+        if (checked) {
+          if (editingId) {
+            nextIds = [subjectId];
+          } else {
+            const ids = new Set(prev.subjectIds);
+            ids.add(subjectId);
+            nextIds = Array.from(ids);
+          }
+        } else {
+          nextIds = prev.subjectIds.filter((id) => id !== subjectId);
+        }
+        return {
+          ...prev,
+          subjectIds: nextIds,
+        };
+      });
+    },
+    [editingId],
   );
 
   const classOptions = useMemo(
@@ -234,40 +277,121 @@ export default function AssignSubjectsPage() {
 
   const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setFormError(null);
+    setFormFeedback(null);
 
-    if (!form.subject_id || !form.school_class_id || !form.class_arm_id) {
-      setFormError("Subject, class, and class arm are required.");
+    if (!form.school_class_id || !form.class_arm_id) {
+      setFormFeedback({
+        type: "danger",
+        message: "Class and class arm are required.",
+      });
+      return;
+    }
+
+    if (!form.subjectIds.length) {
+      setFormFeedback({
+        type: "warning",
+        message: "Select at least one subject to assign.",
+      });
+      return;
+    }
+
+    if (editingId && form.subjectIds.length !== 1) {
+      setFormFeedback({
+        type: "warning",
+        message: "Select exactly one subject when updating an assignment.",
+      });
       return;
     }
 
     setSubmitting(true);
     try {
       if (editingId) {
+        const subjectId = form.subjectIds[0];
         await updateSubjectAssignment(editingId, {
-          subject_id: form.subject_id,
+          subject_id: subjectId,
           school_class_id: form.school_class_id,
           class_arm_id: form.class_arm_id,
           class_section_id: form.class_section_id || null,
         });
-      } else {
-        await createSubjectAssignment({
-          subject_id: form.subject_id,
-          school_class_id: form.school_class_id,
-          class_arm_id: form.class_arm_id,
-          class_section_id: form.class_section_id || null,
+        setFormFeedback({
+          type: "success",
+          message: "Subject assignment updated successfully.",
         });
+        setEditingId(null);
+        setForm({
+          ...initialForm,
+          subjectIds: [],
+        });
+        setPage(1);
+        await fetchAssignments();
+        return;
       }
 
-      setEditingId(null);
-      setForm(initialForm);
-      setPage(1);
-      await fetchAssignments();
+      const successIds: string[] = [];
+      const failures: Array<{ id: string; message: string }> = [];
+
+      for (const subjectId of form.subjectIds) {
+        try {
+          await createSubjectAssignment({
+            subject_id: subjectId,
+            school_class_id: form.school_class_id,
+            class_arm_id: form.class_arm_id,
+            class_section_id: form.class_section_id || null,
+          });
+          successIds.push(subjectId);
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Unable to save assignment.";
+          failures.push({ id: subjectId, message });
+        }
+      }
+
+      if (successIds.length) {
+        setEditingId(null);
+        setForm({
+          ...initialForm,
+          subjectIds: [],
+        });
+        setPage(1);
+        await fetchAssignments();
+      }
+
+      if (failures.length) {
+        const uniqueMessages = Array.from(
+          new Set(
+            failures.map(({ id, message }) => {
+              const label = subjectLabelMap.get(id) ?? "Selected subject";
+              return `${label}: ${message}`;
+            }),
+          ),
+        );
+
+        setFormFeedback({
+          type: successIds.length ? "warning" : "danger",
+          message:
+            successIds.length && failures.length
+              ? `Assigned ${successIds.length} subject${
+                  successIds.length === 1 ? "" : "s"
+                }, but ${failures.length} failed. ${uniqueMessages.join(" ")}`
+              : uniqueMessages.join(" ") || "Unable to save assignment.",
+        });
+      } else if (successIds.length) {
+        setFormFeedback({
+          type: "success",
+          message:
+            successIds.length === 1
+              ? "Subject assigned successfully."
+              : `Assigned ${successIds.length} subjects successfully.`,
+        });
+      }
     } catch (err) {
       console.error("Unable to save assignment", err);
-      setFormError(
-        err instanceof Error ? err.message : "Unable to save assignment.",
-      );
+      setFormFeedback({
+        type: "danger",
+        message: err instanceof Error ? err.message : "Unable to save assignment.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -275,7 +399,7 @@ export default function AssignSubjectsPage() {
 
   const handleEdit = async (assignment: SubjectAssignment) => {
     setEditingId(assignment.id);
-    setFormError(null);
+    setFormFeedback(null);
 
     const classId = `${assignment.school_class_id}`;
     const armId = `${assignment.class_arm_id}`;
@@ -292,7 +416,7 @@ export default function AssignSubjectsPage() {
 
     startTransition(() => {
       setForm({
-        subject_id: `${assignment.subject_id}`,
+        subjectIds: assignment.subject_id ? [`${assignment.subject_id}`] : [],
         school_class_id: classId,
         class_arm_id: armId,
         class_section_id: sectionId,
@@ -346,35 +470,46 @@ export default function AssignSubjectsPage() {
                 </div>
               </div>
 
-              {formError ? (
-                <div className="alert alert-danger" role="alert">
-                  {formError}
+              {formFeedback ? (
+                <div className={`alert alert-${formFeedback.type}`} role="alert">
+                  {formFeedback.message}
                 </div>
               ) : null}
 
               <form onSubmit={handleFormSubmit}>
                 <div className="row">
                   <div className="col-12 form-group">
-                    <label htmlFor="form-subject">Subject *</label>
-                    <select
-                      id="form-subject"
-                      className="form-control"
-                      value={form.subject_id}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          subject_id: event.target.value,
-                        }))
-                      }
-                      required
-                    >
-                      <option value="">Select subject</option>
-                      {subjectOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <label>Subjects *</label>
+                    <div className="border rounded p-2 subject-checkbox-list">
+                      {subjectOptions.length ? (
+                        subjectOptions.map((option) => (
+                          <div className="form-check" key={option.value}>
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id={`form-subject-${option.value}`}
+                              checked={selectedSubjectSet.has(option.value)}
+                              onChange={(event) =>
+                                handleSubjectToggle(option.value, event.target.checked)
+                              }
+                            />
+                            <label
+                              className="form-check-label"
+                              htmlFor={`form-subject-${option.value}`}
+                            >
+                              {option.label}
+                            </label>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted mb-0">No subjects available.</p>
+                      )}
+                    </div>
+                    <small className="form-text text-muted">
+                      {editingId
+                        ? "Select the subject that should remain assigned."
+                        : "Tick one or more subjects to assign to the selected class."}
+                    </small>
                   </div>
                   <div className="col-12 form-group">
                     <label htmlFor="form-class">Class *</label>
@@ -465,7 +600,11 @@ export default function AssignSubjectsPage() {
                       className="btn-fill-lg bg-blue-dark btn-hover-yellow"
                       onClick={() => {
                         setEditingId(null);
-                        setForm(initialForm);
+                        setForm({
+                          ...initialForm,
+                          subjectIds: [],
+                        });
+                        setFormFeedback(null);
                       }}
                     >
                       Reset
