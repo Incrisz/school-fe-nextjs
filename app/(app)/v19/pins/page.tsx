@@ -861,7 +861,7 @@ export default function PinsPage() {
                     <button
                       type="button"
                       id="pin-generate-bulk"
-                      className="btn-fill-lg btn-dark btn-hover-yellow"
+                      className="btn-fill-lg btn-gradient-yellow btn-hover-bluedark"
                       onClick={() => {
                         void handleBulkGenerate();
                       }}
