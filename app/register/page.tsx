@@ -20,6 +20,8 @@ export default function RegisterPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const updateField = (
     key: keyof typeof formData,
@@ -149,23 +151,46 @@ export default function RegisterPage() {
                   onChange={(event) => updateField("subdomain", event.target.value)}
                 />
               </div>
-              <div className="col-lg-6 col-12 form-group">
+              <div className="col-lg-6 col-12 form-group position-relative">
                 <label htmlFor="password">Password *</label>
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter password"
                   className="form-control"
                   required
                   value={formData.password}
                   onChange={(event) => updateField("password", event.target.value)}
                 />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    position: "absolute",
+                    top: "50%",
+                    right: "0.75rem",
+                    transform: "translateY(-50%)",
+                    color: "#9299b8",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  <i
+                    className={`fas ${showPassword ? "fa-unlock" : "fa-lock"}`}
+                    aria-hidden="true"
+                  />
+                </button>
               </div>
-              <div className="col-lg-6 col-12 form-group">
+              <div className="col-lg-6 col-12 form-group position-relative">
                 <label htmlFor="password_confirmation">Confirm Password *</label>
                 <input
                   id="password_confirmation"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm password"
                   className="form-control"
                   required
@@ -174,6 +199,31 @@ export default function RegisterPage() {
                     updateField("password_confirmation", event.target.value)
                   }
                 />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  aria-label={
+                    showConfirmPassword ? "Hide confirm password" : "Show confirm password"
+                  }
+                  aria-pressed={showConfirmPassword}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    position: "absolute",
+                    top: "50%",
+                    right: "0.75rem",
+                    transform: "translateY(-50%)",
+                    color: "#9299b8",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  <i
+                    className={`fas ${showConfirmPassword ? "fa-unlock" : "fa-lock"}`}
+                    aria-hidden="true"
+                  />
+                </button>
               </div>
               <div className="col-12 form-group mg-t-8">
                 <button type="submit" className="login-btn" disabled={submitting}>

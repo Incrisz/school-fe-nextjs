@@ -12,6 +12,7 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -66,18 +67,37 @@ export function LoginForm() {
         />
         <i className="far fa-envelope" />
       </div>
-      <div className="form-group">
+      <div className="form-group position-relative">
         <label htmlFor="password">Password</label>
         <input
           id="password"
-          type="password"
+          type={showPassword ? "text" : "password"}
           placeholder="Enter password"
           className="form-control"
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
-        <i className="fas fa-lock" />
+        <button
+          type="button"
+          className="password-toggle"
+          onClick={() => setShowPassword((prev) => !prev)}
+          aria-label={showPassword ? "Hide password" : "Show password"}
+          aria-pressed={showPassword}
+          style={{
+            background: "none",
+            border: "none",
+            position: "absolute",
+            top: "50%",
+            right: "0.75rem",
+            transform: "translateY(-50%)",
+            color: "#9299b8",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          <i className={`fas ${showPassword ? "fa-unlock" : "fa-lock"}`} aria-hidden="true" />
+        </button>
       </div>
       <div className="form-group d-flex align-items-center justify-content-between">
         <div className="form-check">
