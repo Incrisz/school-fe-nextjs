@@ -235,7 +235,7 @@ export function Sidebar() {
 
           <li className={`nav-item ${isLinkActive("/v10/profile") ? "open" : ""}`}>
             <Link href="/v10/profile" className="nav-link">
-              <i className="flaticon-classmates" />
+              <i className="flaticon-user" />
               <span>Account</span>
             </Link>
           </li>
