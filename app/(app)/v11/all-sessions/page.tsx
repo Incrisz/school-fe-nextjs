@@ -148,32 +148,20 @@ export default function AllSessionsPage() {
                       <td>{formatDate(session.start_date)}</td>
                       <td>{formatDate(session.end_date)}</td>
                       <td>
-                        <div className="dropdown">
-                          <a
-                            href="#"
-                            className="dropdown-toggle"
-                            data-toggle="dropdown"
-                            aria-expanded="false"
+                        <div className="d-flex gap-2">
+                          <Link
+                            className="btn btn-sm btn-outline-primary"
+                            href={`/v11/edit-session?id=${session.id}`}
                           >
-                            <span className="flaticon-more-button-of-three-dots" />
-                          </a>
-                          <div className="dropdown-menu dropdown-menu-right">
-                            <Link
-                              className="dropdown-item"
-                              href={`/v11/edit-session?id=${session.id}`}
-                            >
-                              <i className="fas fa-cogs text-dark-pastel-green" />
-                              Edit
-                            </Link>
-                            <button
-                              className="dropdown-item"
-                              type="button"
-                              onClick={() => onDelete(session)}
-                            >
-                              <i className="fas fa-times text-orange-red" />
-                              Delete
-                            </button>
-                          </div>
+                            Edit
+                          </Link>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            type="button"
+                            onClick={() => onDelete(session)}
+                          >
+                            Delete
+                          </button>
                         </div>
                       </td>
                     </tr>

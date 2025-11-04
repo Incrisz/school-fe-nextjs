@@ -82,43 +82,28 @@ export default function SchoolProfilePage() {
                 <div className="item-title">
                   <h3>School Profile</h3>
                 </div>
-                <div className="dropdown">
-                  <a
-                    className="dropdown-toggle"
-                    href="#"
-                    role="button"
-                    data-toggle="dropdown"
-                    aria-expanded="false"
+                <div className="d-flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() =>
+                      refreshSchoolContext().catch((err) =>
+                        setError(
+                          err instanceof Error
+                            ? err.message
+                            : "Unable to refresh school data.",
+                        ),
+                      )
+                    }
                   >
-                    ...
-                  </a>
-
-                  <div className="dropdown-menu dropdown-menu-right">
-                    <a className="dropdown-item" href="#">
-                      <i className="fas fa-times text-orange-red" />
-                      Close
-                    </a>
-                    <Link className="dropdown-item" href="/v10/edit-school-profile">
-                      <i className="fas fa-cogs text-dark-pastel-green" />
-                      Edit
-                    </Link>
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      onClick={() =>
-                        refreshSchoolContext().catch((err) =>
-                          setError(
-                            err instanceof Error
-                              ? err.message
-                              : "Unable to refresh school data.",
-                          ),
-                        )
-                      }
-                    >
-                      <i className="fas fa-redo-alt text-orange-peel" />
-                      Refresh
-                    </button>
-                  </div>
+                    Refresh
+                  </button>
+                  <Link
+                    className="btn btn-sm btn-outline-primary"
+                    href="/v10/edit-school-profile"
+                  >
+                    Edit
+                  </Link>
                 </div>
               </div>
               <div className="user-details-box">
@@ -224,27 +209,13 @@ export default function SchoolProfilePage() {
                 <div className="item-title">
                   <h3>School Admin Details</h3>
                 </div>
-                <div className="dropdown">
-                  <a
-                    className="dropdown-toggle"
-                    href="#"
-                    role="button"
-                    data-toggle="dropdown"
-                    aria-expanded="false"
+                <div className="d-flex flex-wrap gap-2">
+                  <Link
+                    className="btn btn-sm btn-outline-primary"
+                    href="/v10/edit-admin-profile"
                   >
-                    ...
-                  </a>
-
-                  <div className="dropdown-menu dropdown-menu-right">
-                    <a className="dropdown-item" href="#">
-                      <i className="fas fa-times text-orange-red" />
-                      Close
-                    </a>
-                    <Link className="dropdown-item" href="/v10/edit-admin-profile">
-                      <i className="fas fa-cogs text-dark-pastel-green" />
-                      Edit
-                    </Link>
-                  </div>
+                    Edit
+                  </Link>
                 </div>
               </div>
               <div className="user-details-box">

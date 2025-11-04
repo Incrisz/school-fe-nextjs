@@ -231,32 +231,20 @@ export default function AllTermsPage() {
                       <td>{formatDate(term.start_date)}</td>
                       <td>{formatDate(term.end_date)}</td>
                       <td>
-                        <div className="dropdown">
-                          <a
-                            href="#"
-                            className="dropdown-toggle"
-                            data-toggle="dropdown"
-                            aria-expanded="false"
+                        <div className="d-flex gap-2">
+                          <Link
+                            className="btn btn-sm btn-outline-primary"
+                            href={`/v11/edit-term?id=${term.id}`}
                           >
-                            <span className="flaticon-more-button-of-three-dots" />
-                          </a>
-                          <div className="dropdown-menu dropdown-menu-right">
-                            <Link
-                              className="dropdown-item"
-                              href={`/v11/edit-term?id=${term.id}`}
-                            >
-                              <i className="fas fa-cogs text-dark-pastel-green" />
-                              Edit
-                            </Link>
-                            <button
-                              className="dropdown-item"
-                              type="button"
-                              onClick={() => handleDelete(term)}
-                            >
-                              <i className="fas fa-times text-orange-red" />
-                              Delete
-                            </button>
-                          </div>
+                            Edit
+                          </Link>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            type="button"
+                            onClick={() => handleDelete(term)}
+                          >
+                            Delete
+                          </button>
                         </div>
                       </td>
                     </tr>
