@@ -15,6 +15,7 @@ export interface Parent {
   occupation?: string | null;
   address?: string | null;
   students_count?: number;
+  students?: Array<{ id: string | number } | null>;
   user?: ParentUser | null;
   [key: string]: unknown;
 }
