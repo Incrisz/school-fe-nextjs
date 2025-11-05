@@ -8,7 +8,7 @@ import { LoginForm } from "./login-form";
 
 const passthroughLoader: ImageLoader = ({ src }) => src;
 
-export default function LoginPage() {
+function LoginPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const searchParamsString = searchParams?.toString() ?? "";
@@ -32,16 +32,13 @@ export default function LoginPage() {
     <>
       <div className="login-page-wrap">
         <div className="login-page-content">
-
           <div className="sign-up-cta mb-4 p-3 d-flex align-items-center justify-content-between flex-wrap">
             <div className="d-flex align-items-center">
               <span className="sign-up-icon d-inline-flex align-items-center justify-content-center mr-3">
                 <i className="fas fa-user-plus" aria-hidden="true" />
               </span>
               <div>
-                <div className="font-weight-bold mb-1">
-                  First time here?
-                </div>
+                <div className="font-weight-bold mb-1">First time here?</div>
                 <small className="text-muted">
                   Create a school account in a few simple steps.
                 </small>
@@ -52,14 +49,14 @@ export default function LoginPage() {
             </Link>
           </div>
           <div className="login-box">
-           {registrationSuccess ? (
-            <div
-              className="alert alert-success registration-success-alert"
-              role="alert"
-            >
-              School Registered successfully! 
-            </div>
-          ) : null}
+            {registrationSuccess ? (
+              <div
+                className="alert alert-success registration-success-alert"
+                role="alert"
+              >
+                School Registered successfully!
+              </div>
+            ) : null}
             <div className="item-logo">
               <Image
                 src="/assets/img/logo2.png"
@@ -85,6 +82,14 @@ export default function LoginPage() {
       </div>
       <style jsx>{styles}</style>
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-4">Loading…</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
 
