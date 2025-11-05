@@ -10,18 +10,31 @@ import { resolveBackendUrl } from "@/lib/config";
 const DEFAULT_LOGO = "/assets/img/logo1.png";
 const passthroughLoader: ImageLoader = ({ src }) => src;
 
-interface MenuLink {
+export interface MenuLink {
   label: string;
   href: string;
 }
 
-interface MenuSection {
+export interface MenuSection {
   label: string;
   icon: string;
   links: MenuLink[];
 }
 
-const menuSections: MenuSection[] = [
+export const sidebarQuickLinks = [
+  {
+    label: "Dashboard",
+    href: "/v10/dashboard",
+    icon: "flaticon-dashboard",
+  },
+  {
+    label: "Account",
+    href: "/v10/profile",
+    icon: "flaticon-user",
+  },
+];
+
+export const menuSections: MenuSection[] = [
   {
     label: "Management",
     icon: "flaticon-technological",

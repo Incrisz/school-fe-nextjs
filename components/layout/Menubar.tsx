@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import Image, { type ImageLoader } from "next/image";
-import { useCallback, useMemo, useEffect } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { resolveBackendUrl } from "@/lib/config";
+import {
+  menuSections,
+  sidebarQuickLinks,
+} from "@/components/layout/Sidebar";
 
 const DEFAULT_LOGO = "/assets/img/logo.png";
 const DEFAULT_AVATAR = "/assets/img/figure/admin.jpg";
@@ -16,6 +20,9 @@ export function Menubar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, schoolContext, logout } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
 
   const logoSrc = useMemo(() => {
     const customLogo = schoolContext.school?.logo_url;
@@ -44,6 +51,41 @@ export function Menubar() {
     const derived = roles?.find((entry) => entry?.name)?.name?.trim();
     return derived && derived.length > 0 ? derived : "Administrator";
   }, [user]);
+
+  const searchableItems = useMemo(() => {
+    const quickLinks = sidebarQuickLinks.map((link) => ({
+      label: link.label,
+      href: link.href,
+    }));
+    const sectionLinks = menuSections.flatMap((section) =>
+      section.links.map((link) => ({
+        label: `${section.label} › ${link.label}`,
+        href: link.href,
+      })),
+    );
+    return [...quickLinks, ...sectionLinks];
+  }, []);
+
+  const handleSearchSubmit = useCallback(() => {
+    const term = searchTerm.trim();
+    if (!term) {
+      setSearchError("Enter a keyword to search.");
+      return;
+    }
+    const normalized = term.toLowerCase();
+    const matches = searchableItems.filter((item) =>
+      item.label.toLowerCase().includes(normalized),
+    );
+    if (!matches.length) {
+      setSearchError("No matching pages found.");
+      return;
+    }
+    setSearching(true);
+    setSearchError(null);
+    router.push(matches[0].href);
+    setSearchTerm("");
+    setTimeout(() => setSearching(false), 250);
+  }, [router, searchTerm, searchableItems]);
 
   const handleLogout = useCallback(async () => {
     await logout();
@@ -136,7 +178,12 @@ export function Menubar() {
           <li className="navbar-item header-search-bar">
             <div className="input-group stylish-input-group">
               <span className="input-group-addon">
-                <button type="submit">
+                <button
+                  type="button"
+                  onClick={handleSearchSubmit}
+                  disabled={searching}
+                  aria-label="Search navigation"
+                >
                   <span className="flaticon-search" aria-hidden="true" />
                 </button>
               </span>
@@ -144,7 +191,37 @@ export function Menubar() {
                 type="text"
                 className="form-control"
                 placeholder="Find Something . . ."
+                value={searchTerm}
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                  if (searchError) {
+                    setSearchError(null);
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleSearchSubmit();
+                  }
+                }}
+                aria-label="Quick navigation search"
+                aria-describedby={
+                  searchError ? "global-search-feedback" : undefined
+                }
               />
+              {searchError ? (
+                <small
+                  id="global-search-feedback"
+                  className="text-warning d-block mt-1"
+                  role="status"
+                >
+                  {searchError}
+                </small>
+              ) : searching ? (
+                <small className="text-muted d-block mt-1" role="status">
+                  Searching…
+                </small>
+              ) : null}
             </div>
           </li>
         </ul>
