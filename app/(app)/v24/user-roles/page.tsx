@@ -221,7 +221,26 @@ export default function UserRolesPage() {
     setSaving(false);
   };
 
-  const toggleRoleSelection = (roleId: string, checked: boolean) => {
+  const userHasTeacherRole = useCallback((): boolean => {
+    if (!selectedUser || !Array.isArray(selectedUser.roles)) {
+      return false;
+    }
+    return selectedUser.roles.some((role) => {
+      const roleName = typeof role?.name === "string" ? role.name.toLowerCase() : "";
+      return roleName === "teacher";
+    });
+  }, [selectedUser]);
+
+  const isTeacherRole = useCallback((role: Role): boolean => {
+    const roleName = typeof role?.name === "string" ? role.name.toLowerCase() : "";
+    return roleName === "teacher";
+  }, []);
+
+  const toggleRoleSelection = (roleId: string, checked: boolean, role?: Role) => {
+    // Prevent unchecking teacher role if user has it
+    if (!checked && role && isTeacherRole(role) && userHasTeacherRole()) {
+      return;
+    }
     setSelectedRoleIds((previous) => {
       const next = new Set(previous);
       if (checked) {
@@ -618,6 +637,9 @@ export default function UserRolesPage() {
                           const checkboxId = `assign-role-${role.id}`;
                           const roleId = String(role.id);
                           const checked = selectedRoleIds.has(roleId);
+                          const isTeacher = isTeacherRole(role);
+                          const hasTeacherRole = userHasTeacherRole();
+                          const isLocked = isTeacher && hasTeacherRole;
                           return (
                             <div
                               className="custom-control custom-checkbox mb-2"
@@ -633,15 +655,22 @@ export default function UserRolesPage() {
                                   toggleRoleSelection(
                                     roleId,
                                     event.target.checked,
+                                    role,
                                   );
                                 }}
-                                disabled={saving}
+                                disabled={saving || isLocked}
+                                title={isLocked ? "Teacher role cannot be removed from this user" : undefined}
                               />
                               <label
                                 className="custom-control-label"
                                 htmlFor={checkboxId}
                               >
                                 {role.name || ""}
+                                {isLocked ? (
+                                  <small className="text-muted ml-1" title="Locked - cannot be removed">
+                                    🔒
+                                  </small>
+                                ) : null}
                                 {role.description ? (
                                   <small className="d-block text-muted">
                                     {role.description}

@@ -491,7 +491,24 @@ export default function RolesPage() {
     setFormError(null);
   };
 
-  const togglePermissionSelection = (permissionId: string, checked: boolean) => {
+  const isLockedPermission = useCallback((permission: Permission): boolean => {
+    if (modalMode !== "edit" || !editingRole) {
+      return false;
+    }
+    const roleName = editingRole.name?.toLowerCase() ?? "";
+    if (roleName !== "teacher") {
+      return false;
+    }
+    const lockedPermissionNames = ["profile.view", "profile.edit", "profile.password"];
+    const permissionName = permission?.name ?? "";
+    return lockedPermissionNames.includes(permissionName);
+  }, [modalMode, editingRole]);
+
+  const togglePermissionSelection = (permissionId: string, checked: boolean, permission?: Permission) => {
+    // Prevent unchecking locked permissions for teacher role
+    if (!checked && permission && isLockedPermission(permission)) {
+      return;
+    }
     setSelectedPermissionIds((previous) => {
       const next = new Set(previous);
       if (checked) {
@@ -843,6 +860,7 @@ export default function RolesPage() {
                                 const checked = selectedPermissionIds.has(
                                   item.id,
                                 );
+                                const isLocked = isLockedPermission(item.permission);
                                 return (
                                   <div
                                     className="col-sm-6 col-lg-4 mb-2"
@@ -859,15 +877,24 @@ export default function RolesPage() {
                                           togglePermissionSelection(
                                             item.id,
                                             event.target.checked,
+                                            item.permission,
                                           );
                                         }}
-                                        disabled={saving}
+                                        disabled={saving || isLocked}
+                                        title={isLocked ? "This permission is locked for teacher role" : undefined}
                                       />
                                       <label
                                         className="custom-control-label"
                                         htmlFor={checkboxId}
                                       >
-                                        <span className="d-block">{item.displayName}</span>
+                                        <span className="d-block">
+                                          {item.displayName}
+                                          {isLocked ? (
+                                            <small className="text-muted ml-1" title="Locked permanently">
+                                              🔒
+                                            </small>
+                                          ) : null}
+                                        </span>
                                         {item.subtitle ? (
                                           <small className="text-muted d-block">
                                             {item.subtitle}
