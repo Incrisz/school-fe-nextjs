@@ -31,6 +31,7 @@ interface PermissionGroupItem {
   id: string;
   permission: Permission;
   displayName: string;
+  subtitle?: string | null;
 }
 
 interface PermissionGroup {
@@ -53,19 +54,32 @@ const formatDateTime = (value: string | null | undefined): string => {
   });
 };
 
-const formatPermissionName = (permissionName: string): {
+const normalizeLabel = (value: string): string =>
+  value.replace(/[-_.]/g, " ").replace(/\s+/g, " ").trim();
+
+const toTitle = (value: string): string =>
+  normalizeLabel(value).replace(/\b\w/g, (char) => char.toUpperCase());
+
+const formatPermissionLabels = (permissionName: string): {
   groupKey: string;
   groupTitle: string;
-  displayName: string;
+  primaryLabel: string;
+  subtitle: string | null;
 } => {
-  const rawParts = permissionName.split(".");
-  const groupPart = rawParts.length > 1 ? rawParts[0] : "general";
-  const remaining = rawParts.length > 1 ? rawParts.slice(1) : rawParts;
-  const display = remaining.join(" ").replace(/[-_.]/g, " ").trim();
+  const rawParts = permissionName.split(".").filter((part) => part.trim().length > 0);
+  const groupPart = rawParts.length > 0 ? rawParts[0] : "general";
+  const contextParts = rawParts.length > 1 ? rawParts.slice(0, rawParts.length - 1) : [];
+  const actionPart =
+    rawParts.length > 1 ? rawParts[rawParts.length - 1] : rawParts[0] ?? "general";
+
+  const subtitle =
+    contextParts.length > 0 ? toTitle(contextParts.join(" ")) : groupPart === "general" ? null : toTitle(groupPart);
+
   return {
     groupKey: groupPart || "general",
     groupTitle: (groupPart || "general").replace(/[-_]/g, " "),
-    displayName: display || permissionName.replace(/[-_.]/g, " "),
+    primaryLabel: toTitle(actionPart),
+    subtitle,
   };
 };
 
@@ -182,11 +196,15 @@ const collectPermissionGroups = (
       key: template.key,
       title: template.title,
       items: matched
-        .map((permission) => ({
-          id: String(permission.id),
-          permission,
-          displayName: formatPermissionName(String(permission?.name ?? "")).displayName,
-        }))
+        .map((permission) => {
+          const labelMeta = formatPermissionLabels(String(permission?.name ?? ""));
+          return {
+            id: String(permission.id),
+            permission,
+            displayName: labelMeta.primaryLabel,
+            subtitle: labelMeta.subtitle,
+          };
+        })
         .sort((a, b) => a.displayName.localeCompare(b.displayName)),
     });
 
@@ -201,7 +219,7 @@ const collectPermissionGroups = (
 
     remaining.forEach((permission) => {
       const name = String(permission?.name ?? "");
-      const { groupKey, groupTitle, displayName } = formatPermissionName(name);
+      const { groupKey, groupTitle, primaryLabel, subtitle } = formatPermissionLabels(name);
       const entry =
         fallbackMap.get(groupKey) ??
         {
@@ -213,7 +231,8 @@ const collectPermissionGroups = (
       entry.items.push({
         id: String(permission.id),
         permission,
-        displayName,
+        displayName: primaryLabel,
+        subtitle,
       });
 
       fallbackMap.set(groupKey, entry);
@@ -794,7 +813,12 @@ export default function RolesPage() {
                                         className="custom-control-label"
                                         htmlFor={checkboxId}
                                       >
-                                        {item.displayName}
+                                        <span className="d-block">{item.displayName}</span>
+                                        {item.subtitle ? (
+                                          <small className="text-muted d-block">
+                                            {item.subtitle}
+                                          </small>
+                                        ) : null}
                                       </label>
                                     </div>
                                   </div>
