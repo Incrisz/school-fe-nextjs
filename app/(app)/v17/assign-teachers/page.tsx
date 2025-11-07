@@ -525,36 +525,7 @@ export default function AssignTeachersPage() {
                       ))}
                     </select>
                   </div>
-                  {/*
-                  <div className="col-12 form-group">
-                    <label htmlFor="teacher-class-section">
-                      Class Section <span className="text-muted">(optional)</span>
-                    </label>
-                    <select
-                      id="teacher-class-section"
-                      className="form-control"
-                      value={form.class_section_id}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          class_section_id: event.target.value,
-                        }))
-                      }
-                      disabled={
-                        !form.school_class_id ||
-                        !form.class_arm_id ||
-                        classSectionsForForm.length === 0
-                      }
-                    >
-                      <option value="">Select class section (optional)</option>
-                      {classSectionsForForm.map((section) => (
-                        <option key={section.id} value={section.id}>
-                          {section.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  */}
+                  {/* Class Section field intentionally hidden */}
                   <div className="col-12 form-group">
                     <label htmlFor="teacher-session">Session *</label>
                     <select
@@ -775,37 +746,7 @@ export default function AssignTeachersPage() {
                     ))}
                   </select>
                 </div>
-                {/*
-                <div className="col-md-4 col-12 form-group">
-                  <label htmlFor="teacher-filter-class-section">
-                    Class Section
-                  </label>
-                  <select
-                    id="teacher-filter-class-section"
-                    className="form-control"
-                    value={filters.class_section_id}
-                    onChange={(event) => {
-                      setFilters((prev) => ({
-                        ...prev,
-                        class_section_id: event.target.value,
-                      }));
-                      setPage(1);
-                    }}
-                    disabled={
-                      !filters.school_class_id ||
-                      !filters.class_arm_id ||
-                      classSectionsForFilter.length === 0
-                    }
-                  >
-                    <option value="">All class sections</option>
-                    {classSectionsForFilter.map((section) => (
-                      <option key={section.id} value={section.id}>
-                        {section.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                */}
+                {/* Class Section filter intentionally hidden */}
                 <div className="col-md-4 col-12 form-group">
                   <label htmlFor="teacher-filter-session">Session</label>
                   <select

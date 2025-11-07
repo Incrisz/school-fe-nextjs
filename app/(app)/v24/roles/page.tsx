@@ -69,53 +69,170 @@ const formatPermissionName = (permissionName: string): {
   };
 };
 
+interface PermissionGroupTemplate {
+  key: string;
+  title: string;
+  patterns: Array<string | RegExp>;
+}
+
+const SIDEBAR_PERMISSION_GROUPS: PermissionGroupTemplate[] = [
+  {
+    key: "management",
+    title: "Management",
+    patterns: ["sessions.", "terms.", "subjects.", "result.pin."],
+  },
+  {
+    key: "parent",
+    title: "Parent",
+    patterns: ["parents."],
+  },
+  {
+    key: "staff",
+    title: "Staff",
+    patterns: ["staff."],
+  },
+  {
+    key: "classes",
+    title: "Classes",
+    patterns: ["classes.", "class-arms."],
+  },
+  {
+    key: "assign",
+    title: "Assign",
+    patterns: ["subject.assignments", "class-teachers."],
+  },
+  {
+    key: "student",
+    title: "Student",
+    patterns: ["students."],
+  },
+  {
+    key: "attendance",
+    title: "Attendance",
+    patterns: ["attendance."],
+  },
+  {
+    key: "settings",
+    title: "Settings",
+    patterns: ["assessment.", "skills.", "settings."],
+  },
+  {
+    key: "fees",
+    title: "Fee Management",
+    patterns: ["fees."],
+  },
+  {
+    key: "rbac",
+    title: "RBAC",
+    patterns: ["permissions.", "roles.", /^users\.assignRoles$/],
+  },
+  {
+    key: "analytics",
+    title: "Analytics",
+    patterns: ["analytics."],
+  },
+];
+
+const matchesPattern = (permissionName: string, pattern: string | RegExp): boolean => {
+  if (pattern instanceof RegExp) {
+    return pattern.test(permissionName);
+  }
+  if (pattern.endsWith(".")) {
+    return permissionName.startsWith(pattern);
+  }
+  return (
+    permissionName === pattern ||
+    permissionName.startsWith(`${pattern}.`)
+  );
+};
+
+const filterPermissionsByTerm = (
+  permissions: Permission[],
+  term: string,
+): Permission[] => {
+  const normalized = term.trim().toLowerCase();
+  if (!normalized) {
+    return permissions;
+  }
+  return permissions.filter((permission) => {
+    const name = String(permission?.name ?? "").toLowerCase();
+    const description = String(permission?.description ?? "").toLowerCase();
+    return name.includes(normalized) || description.includes(normalized);
+  });
+};
+
 const collectPermissionGroups = (
   permissions: Permission[],
   filterTerm: string,
 ): PermissionGroup[] => {
-  const term = filterTerm.trim().toLowerCase();
-  const grouped = new Map<string, PermissionGroup>();
+  let remaining = filterPermissionsByTerm(permissions, filterTerm);
+  const groups: PermissionGroup[] = [];
 
-  permissions.forEach((permission) => {
-    const name = String(permission?.name ?? "");
-    const description = String(permission?.description ?? "");
-
-    if (term) {
-      const matches =
-        name.toLowerCase().includes(term) ||
-        description.toLowerCase().includes(term);
-      if (!matches) {
-        return;
-      }
-    }
-
-    const { groupKey, groupTitle, displayName } = formatPermissionName(name);
-    const entry =
-      grouped.get(groupKey) ??
-      {
-        key: groupKey,
-        title: groupTitle,
-        items: [] as PermissionGroupItem[],
-      };
-
-    entry.items.push({
-      id: String(permission.id),
-      permission,
-      displayName,
+  SIDEBAR_PERMISSION_GROUPS.forEach((template) => {
+    const matched = remaining.filter((permission) => {
+      const name = String(permission?.name ?? "");
+      return template.patterns.some((pattern) => matchesPattern(name, pattern));
     });
 
-    grouped.set(groupKey, entry);
+    if (!matched.length) {
+      return;
+    }
+
+    groups.push({
+      key: template.key,
+      title: template.title,
+      items: matched
+        .map((permission) => ({
+          id: String(permission.id),
+          permission,
+          displayName: formatPermissionName(String(permission?.name ?? "")).displayName,
+        }))
+        .sort((a, b) => a.displayName.localeCompare(b.displayName)),
+    });
+
+    const matchedIds = new Set(matched.map((permission) => permission.id));
+    remaining = remaining.filter(
+      (permission) => !matchedIds.has(permission.id),
+    );
   });
 
-  return Array.from(grouped.values())
-    .map((group) => ({
-      ...group,
-      title: group.title,
+  if (remaining.length > 0) {
+    const fallbackMap = new Map<string, PermissionGroup>();
+
+    remaining.forEach((permission) => {
+      const name = String(permission?.name ?? "");
+      const { groupKey, groupTitle, displayName } = formatPermissionName(name);
+      const entry =
+        fallbackMap.get(groupKey) ??
+        {
+          key: groupKey,
+          title: groupTitle,
+          items: [] as PermissionGroupItem[],
+        };
+
+      entry.items.push({
+        id: String(permission.id),
+        permission,
+        displayName,
+      });
+
+      fallbackMap.set(groupKey, entry);
+    });
+
+    const fallbackGroups = Array.from(fallbackMap.values()).map((group) => ({
+      key: `other-${group.key}`,
+      title: group.key === "general" ? "Other" : group.title,
       items: group.items.sort((a, b) =>
         a.displayName.localeCompare(b.displayName),
       ),
-    }))
-    .sort((a, b) => a.title.localeCompare(b.title));
+    }));
+
+    groups.push(
+      ...fallbackGroups.sort((a, b) => a.title.localeCompare(b.title)),
+    );
+  }
+
+  return groups;
 };
 
 const summarizeRolePermissions = (role: Role): ReactNode => {
