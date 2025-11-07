@@ -16,6 +16,7 @@ export interface MenuLink {
   href: string;
   requiredPermissions?: string | string[];
   requiredRoles?: string | string[];
+  excludeRoles?: string | string[];
 }
 
 export interface MenuSection {
@@ -36,6 +37,22 @@ export const sidebarQuickLinks: SidebarQuickLink[] = [
     href: "/v10/dashboard",
     icon: "flaticon-dashboard",
     requiredPermissions: "dashboard.view",
+    excludeRoles: ["teacher"],
+  },
+  {
+    id: "staff-dashboard",
+    label: "Dashboard",
+    href: "/v25/staff-dashboard",
+    icon: "flaticon-dashboard",
+    requiredRoles: ["teacher"],
+  },
+  {
+    id: "profile",
+    label: "My Profile",
+    href: "/v25/profile",
+    icon: "flaticon-user",
+    requiredPermissions: "profile.view",
+    requiredRoles: ["teacher"],
   },
 ];
 
@@ -135,19 +152,6 @@ export const menuSections: MenuSection[] = [
       { label: "User Roles", href: "/v24/user-roles", requiredPermissions: "users.assignRoles" },
     ],
   },
-  {
-    label: "Staff Tools",
-    icon: "flaticon-teacher",
-    links: [
-      { label: "Staff Dashboard", href: "/v25/staff-dashboard", requiredRoles: ["teacher"] },
-      {
-        label: "My Profile",
-        href: "/v25/profile",
-        requiredPermissions: "profile.view",
-        requiredRoles: ["teacher"],
-      },
-    ],
-  },
 ];
 
 export function Sidebar() {
@@ -183,6 +187,18 @@ export function Sidebar() {
     return roles;
   }, [user]);
 
+  const dashboardPath = useMemo(() => {
+    const normalizedRole = String(user?.role ?? "").toLowerCase();
+    const isTeacher =
+      normalizedRole.includes("teacher") ||
+      (Array.isArray(user?.roles)
+        ? user?.roles.some((role) =>
+            String(role?.name ?? "").toLowerCase().includes("teacher"),
+          )
+        : false);
+    return isTeacher ? "/v25/staff-dashboard" : "/v10/dashboard";
+  }, [user]);
+
   const isLinkActive = useCallback(
     (href: string) => pathname === href || pathname.startsWith(`${href}/`),
     [pathname],
@@ -192,6 +208,16 @@ export function Sidebar() {
     (link: MenuLink) => {
       if (link.requiredPermissions && !hasPermission(link.requiredPermissions)) {
         return false;
+      }
+      if (link.excludeRoles) {
+        const excludedRoles = Array.isArray(link.excludeRoles)
+          ? link.excludeRoles
+          : [link.excludeRoles];
+        if (excludedRoles.some((roleName) =>
+          roleSet.has(String(roleName).toLowerCase()),
+        )) {
+          return false;
+        }
       }
       if (!link.requiredRoles) {
         return true;
@@ -241,7 +267,7 @@ export function Sidebar() {
     >
       <div className="mobile-sidebar-header d-md-none">
         <div className="header-logo d-flex align-items-center">
-          <Link href="/v10/dashboard" className="d-flex align-items-center">
+          <Link href={dashboardPath} className="d-flex align-items-center">
             <Image
               id="sidebar-school-logo"
               src={logoSrc}

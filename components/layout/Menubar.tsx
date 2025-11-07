@@ -52,6 +52,18 @@ export function Menubar() {
     return derived && derived.length > 0 ? derived : "Administrator";
   }, [user]);
 
+  const dashboardPath = useMemo(() => {
+    const normalizedRole = String((user as { role?: string | null })?.role ?? "").toLowerCase();
+    const isTeacher =
+      normalizedRole.includes("teacher") ||
+      (Array.isArray((user as { roles?: Array<{ name?: string | null }> })?.roles)
+        ? (user as { roles?: Array<{ name?: string | null }> }).roles?.some((role) =>
+            String(role?.name ?? "").toLowerCase().includes("teacher"),
+          )
+        : false);
+    return isTeacher ? "/v25/staff-dashboard" : "/v10/dashboard";
+  }, [user]);
+
   const searchableItems = useMemo(() => {
     const quickLinks = sidebarQuickLinks.map((link) => ({
       label: link.label,
@@ -126,7 +138,7 @@ export function Menubar() {
     <div className="navbar navbar-expand-md header-menu-one bg-light">
       <div className="nav-bar-header-one">
         <div className="header-logo">
-          <Link href="/v10/dashboard" className="d-flex align-items-center">
+          <Link href={dashboardPath} className="d-flex align-items-center">
             <Image
               id="menubar-school-logo"
               src={logoSrc}

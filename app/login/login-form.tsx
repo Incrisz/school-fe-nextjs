@@ -6,6 +6,23 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function getDefaultDashboardPath(user?: { role?: string | null; roles?: Array<{ name?: string | null }> | null } | null): string {
+  if (!user) {
+    return "/v10/dashboard";
+  }
+  
+  const normalizedRole = String(user.role ?? "").toLowerCase();
+  const isTeacher =
+    normalizedRole.includes("teacher") ||
+    (Array.isArray(user.roles)
+      ? user.roles.some((role) =>
+          String(role?.name ?? "").toLowerCase().includes("teacher"),
+        )
+      : false);
+  
+  return isTeacher ? "/v25/staff-dashboard" : "/v10/dashboard";
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,7 +58,8 @@ export function LoginForm() {
       }
 
       const next = searchParams?.get("next");
-      router.push(next || "/v10/dashboard");
+      const defaultDashboard = getDefaultDashboardPath(user);
+      router.push(next || defaultDashboard);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Unable to sign in. Please try again.",
@@ -51,7 +69,7 @@ export function LoginForm() {
     }
   };
 
-  const nextPath = searchParams?.get("next") || "/v10/dashboard";
+  const nextPath = searchParams?.get("next") || getDefaultDashboardPath(user);
 
   useEffect(() => {
     if (loading || !user) {

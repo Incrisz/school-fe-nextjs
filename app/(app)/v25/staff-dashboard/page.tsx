@@ -126,7 +126,7 @@ export default function StaffDashboardPage() {
         <h3>Staff Dashboard</h3>
         <ul>
           <li>
-            <Link href="/v10/dashboard">Home</Link>
+            <Link href="/v25/staff-dashboard">Home</Link>
           </li>
           <li>Staff Dashboard</li>
         </ul>
