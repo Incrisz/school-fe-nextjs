@@ -54,15 +54,34 @@ export async function GET(request: NextRequest) {
   });
 
   if (!response.ok) {
-    const message = await response
-      .text()
-      .catch(() => response.statusText || "Unable to load printable result.");
+    // Try to parse as JSON first (for API error responses)
+    let errorMessage = "Unable to load printable result.";
+    const contentType = response.headers.get("content-type") || "";
+    
+    if (contentType.includes("application/json")) {
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        // If JSON parsing fails, fall back to text
+        const text = await response.text().catch(() => "");
+        errorMessage = text.trim() || errorMessage;
+      }
+    } else {
+      // For HTML responses, extract a user-friendly message
+      if (response.status === 403) {
+        errorMessage = "You do not have permission to print student results.";
+      } else if (response.status === 401) {
+        errorMessage = "Your session has expired. Please log in again.";
+      } else {
+        const text = await response.text().catch(() => "");
+        errorMessage = text.trim() || `Unable to load printable result (${response.status}).`;
+      }
+    }
+    
     return NextResponse.json(
       {
-        message:
-          message && message.trim().length > 0
-            ? message
-            : "Unable to load printable result.",
+        message: errorMessage,
       },
       { status: response.status },
     );
