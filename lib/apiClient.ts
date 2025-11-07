@@ -30,6 +30,13 @@ export async function apiFetch<T = unknown>(
   });
 
   if (!response.ok) {
+    // For 403 (Forbidden) errors, return empty data instead of throwing
+    // This allows UI to hide elements gracefully without showing errors
+    if (response.status === 403) {
+      // Return appropriate empty value based on expected return type
+      return [] as T;
+    }
+    
     let message = response.statusText;
     try {
       const data = await response.json();

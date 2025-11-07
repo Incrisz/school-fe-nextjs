@@ -69,8 +69,13 @@ const formatPermissionLabels = (permissionName: string): {
   const rawParts = permissionName.split(".").filter((part) => part.trim().length > 0);
   const groupPart = rawParts.length > 0 ? rawParts[0] : "general";
   const contextParts = rawParts.length > 1 ? rawParts.slice(0, rawParts.length - 1) : [];
-  const actionPart =
+  let actionPart =
     rawParts.length > 1 ? rawParts[rawParts.length - 1] : rawParts[0] ?? "general";
+
+  // Map "update" to "Edit" for better UX
+  if (actionPart === "update") {
+    actionPart = "edit";
+  }
 
   const subtitle =
     contextParts.length > 0 ? toTitle(contextParts.join(" ")) : groupPart === "general" ? null : toTitle(groupPart);

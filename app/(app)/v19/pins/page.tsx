@@ -197,6 +197,16 @@ export default function PinsPage() {
       const data = await listClasses();
       setClasses(data);
     } catch (error) {
+      // Don't show errors for permission issues (403) - user just won't see classes
+      const isPermissionError = error instanceof Error && (
+        (error as Error & { status?: number }).status === 403 ||
+        error.message.includes("403") ||
+        error.message.includes("permission")
+      );
+      if (isPermissionError) {
+        setClasses([]);
+        return;
+      }
       console.error("Unable to load classes", error);
       showFeedback(
         error instanceof Error
