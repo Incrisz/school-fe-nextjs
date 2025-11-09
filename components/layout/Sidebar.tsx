@@ -68,6 +68,14 @@ export const menuSections: MenuSection[] = [
     ],
   },
   {
+    label: "Account",
+    icon: "flaticon-account",
+    links: [
+      { label: "User Accounts", href: "/v24/user-accounts", requiredPermissions: "users.view" },
+      { label: "Create Account", href: "/v24/create-account", requiredPermissions: "users.create" },
+    ],
+  },
+  {
     label: "Parent",
     icon: "flaticon-couple",
     links: [

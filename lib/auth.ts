@@ -173,6 +173,16 @@ export async function getAuthenticatedUser(): Promise<User | null> {
   }
 }
 
+export async function getPermissionHierarchy(): Promise<any> {
+  try {
+    const payload = await apiFetch(API_ROUTES.permissionHierarchy);
+    return payload;
+  } catch (error) {
+    console.error("Unable to fetch permission hierarchy", error);
+    return null;
+  }
+}
+
 export async function updateUserProfile(
   payload: UpdateUserPayload,
 ): Promise<User | null> {

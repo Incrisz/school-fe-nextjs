@@ -1130,14 +1130,14 @@ export default function ResultsEntryPage() {
                 {tableLoading ? "Loading…" : "Load Students"}
               </button>
               <button
+                className="btn-fill-lg btn-warning btn-hover-bluedark"
                 type="button"
-                className="btn-fill-lg btn-outline-secondary mb-2"
                 onClick={() => {
                   void handleSaveResults();
                 }}
-                disabled={saving || tableLoading || !rows.length}
+                disabled={saving || !students.length}
               >
-                {saving ? "Saving…" : "Save Results"}
+                {saving ? "Saving…" : "Save Results Entry"}
               </button>
               <span className="ml-auto text-muted small">{statusMessage}</span>
             </div>

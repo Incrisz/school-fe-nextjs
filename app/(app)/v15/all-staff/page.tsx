@@ -217,27 +217,14 @@ export default function AllStaffPage() {
                 Search
               </button>
             </div>
-            <div className="col-lg-3 col-md-6 col-12 form-group text-right">
-              <button
-                id="staff-reset-btn"
-                type="button"
-                className="fw-btn-fill btn-outline-secondary mr-2"
-                onClick={() => {
-                  setFilters(initialFilter);
-                  setSortBy("full_name");
-                  setSortDirection("asc");
-                  setPage(1);
-                  fetchStaff().catch(() => undefined);
-                }}
-              >
-                Reset
-              </button>
+            <div className="col-lg-3 col-md-6 col-12 form-group">
               <Link
                 href="/v15/add-staff"
-                className="fw-btn-fill btn-gradient-yellow"
+                className="fw-btn-fill btn-gradient-yellow w-100"
               >
                 Add Staff
               </Link>
+            </div>
             </div>
           </form>
 

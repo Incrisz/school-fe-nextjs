@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   getAuthenticatedUser,
+  getPermissionHierarchy,
   login as loginRequest,
   logout as logoutRequest,
   type LoginPayload,
@@ -27,6 +28,7 @@ interface AuthState {
   schoolContext: SchoolContext;
   loading: boolean;
   permissions: Set<string>;
+  permissionHierarchy: any;
   hasPermission: (permission?: string | string[] | null) => boolean;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
@@ -43,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const [loading, setLoading] = useState(true);
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
+  const [permissionHierarchy, setPermissionHierarchy] = useState<any>(null);
 
   const hydrate = useCallback(async () => {
     const token = getCookie("token");
@@ -56,9 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true);
     try {
-      const [userResponse, school] = await Promise.all([
+      const [userResponse, school, hierarchy] = await Promise.all([
         getAuthenticatedUser(),
         fetchSchoolContext(),
+        getPermissionHierarchy(),
       ]);
       setUser(userResponse);
       setPermissions(
@@ -69,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ),
       );
       setSchoolContext(school);
+      setPermissionHierarchy(hierarchy);
     } catch (error) {
       console.error("Failed to hydrate auth context", error);
       setUser(null);
@@ -119,9 +124,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
 
-      return requiredList.some((permission) => permissions.has(permission));
+      const checkPermission = (permission: string): boolean => {
+        if (permissions.has(permission)) {
+          return true;
+        }
+
+        if (!permissionHierarchy) {
+          return false;
+        }
+
+        const findChildren = (p: string): string[] => {
+          const perm = permissionHierarchy.find((item: any) => item.name === p);
+          return perm && perm.children ? perm.children : [];
+        };
+
+        const children = findChildren(permission);
+        return children.some(checkPermission);
+      };
+
+      return requiredList.some(checkPermission);
     },
-    [permissions],
+    [permissions, permissionHierarchy],
   );
 
   const value = useMemo(
@@ -130,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       schoolContext,
       loading,
       permissions,
+      permissionHierarchy,
       hasPermission,
       login,
       logout,
@@ -141,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       schoolContext,
       loading,
       permissions,
+      permissionHierarchy,
       hasPermission,
       login,
       logout,
