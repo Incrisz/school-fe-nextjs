@@ -225,7 +225,6 @@ export default function AllStaffPage() {
                 Add Staff
               </Link>
             </div>
-            </div>
           </form>
 
           <div className="table-responsive">

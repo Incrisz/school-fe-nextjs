@@ -268,7 +268,6 @@ export default function AllSubjectsPage() {
                 Add Subject
               </Link>
             </div>
-            </div>
           </form>
 
           <div className="table-responsive">

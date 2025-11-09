@@ -1135,7 +1135,7 @@ export default function ResultsEntryPage() {
                 onClick={() => {
                   void handleSaveResults();
                 }}
-                disabled={saving || !students.length}
+                disabled={saving || !rows.length}
               >
                 {saving ? "Saving…" : "Save Results Entry"}
               </button>
