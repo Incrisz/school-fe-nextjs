@@ -219,7 +219,12 @@ export default function ResultsEntryPage() {
     }
 
     // For teachers: use dashboard data which includes processed assignments
-    if (isTeacher && teacherDashboard) {
+    if (isTeacher) {
+      // If dashboard hasn't loaded yet, show all subjects (will be filtered by backend anyway)
+      if (!teacherDashboard) {
+        return subjects;
+      }
+
       const subjectIdsForClass = new Set<string>();
 
       teacherDashboard.assignments.forEach((assignment) => {
