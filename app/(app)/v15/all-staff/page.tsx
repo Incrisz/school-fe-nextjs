@@ -217,7 +217,7 @@ export default function AllStaffPage() {
                 Search
               </button>
             </div>
-            <div className="col-lg-3 col-md-6 col-12 form-group">
+            <div className="col-lg-2 col-md-6 col-12 form-group">
               <Link
                 href="/v15/add-staff"
                 className="fw-btn-fill btn-gradient-yellow w-100"

@@ -260,7 +260,7 @@ export default function AllSubjectsPage() {
                 Search
               </button>
             </div>
-            <div className="col-lg-4 col-md-6 col-12 form-group">
+            <div className="col-lg-2 col-md-6 col-12 form-group">
               <Link
                 href="/v16/add-subject"
                 className="fw-btn-fill btn-gradient-yellow w-100"
