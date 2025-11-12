@@ -59,6 +59,7 @@ export const API_ROUTES = {
   resultBatch: "/api/v1/results/batch",
   resultPins: "/api/v1/result-pins",
   permissions: "/api/v1/permissions",
+  permissionHierarchy: "/api/v1/permissions/hierarchy",
   roles: "/api/v1/roles",
   users: "/api/v1/users",
 } as const;

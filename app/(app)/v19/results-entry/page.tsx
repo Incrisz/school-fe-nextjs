@@ -883,7 +883,8 @@ export default function ResultsEntryPage() {
       const response = await saveResultsBatch({
         session_id: selectedSession,
         term_id: selectedTerm,
-        assessment_component_id: selectedComponent || null,
+        // Use same sentinel value as listResults when no component is selected
+        assessment_component_id: selectedComponent || "none",
         entries: entries.map((entry) => ({
           ...entry,
         })),
@@ -1130,14 +1131,14 @@ export default function ResultsEntryPage() {
                 {tableLoading ? "Loading…" : "Load Students"}
               </button>
               <button
+                className="btn-fill-lg btn-gradient-yellow btn-hover-bluedark"
                 type="button"
-                className="btn-fill-lg btn-outline-secondary mb-2"
                 onClick={() => {
                   void handleSaveResults();
                 }}
-                disabled={saving || tableLoading || !rows.length}
+                disabled={saving || !rows.length}
               >
-                {saving ? "Saving…" : "Save Results"}
+                {saving ? "Saving…" : "Save Results Entry"}
               </button>
               <span className="ml-auto text-muted small">{statusMessage}</span>
             </div>
