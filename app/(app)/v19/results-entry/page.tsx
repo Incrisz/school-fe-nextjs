@@ -883,7 +883,8 @@ export default function ResultsEntryPage() {
       const response = await saveResultsBatch({
         session_id: selectedSession,
         term_id: selectedTerm,
-        assessment_component_id: selectedComponent || null,
+        // Use same sentinel value as listResults when no component is selected
+        assessment_component_id: selectedComponent || "none",
         entries: entries.map((entry) => ({
           ...entry,
         })),
@@ -1130,7 +1131,7 @@ export default function ResultsEntryPage() {
                 {tableLoading ? "Loading…" : "Load Students"}
               </button>
               <button
-                className="btn-fill-lg btn-warning btn-hover-bluedark"
+                className="btn-fill-lg btn-gradient-yellow btn-hover-bluedark"
                 type="button"
                 onClick={() => {
                   void handleSaveResults();
