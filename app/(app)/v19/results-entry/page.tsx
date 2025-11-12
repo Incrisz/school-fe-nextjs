@@ -10,9 +10,9 @@ import {
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  getCurrentTeacherAssignments,
-  type TeacherAssignments,
-} from "@/lib/teacherAssignments";
+  fetchTeacherDashboard,
+  type TeacherDashboardResponse,
+} from "@/lib/staff";
 import { listSessions, type Session } from "@/lib/sessions";
 import { listTermsBySession, type Term } from "@/lib/terms";
 import { listClasses, type SchoolClass } from "@/lib/classes";
@@ -26,6 +26,8 @@ import {
   listAssessmentComponents,
   type AssessmentComponent,
 } from "@/lib/assessmentComponents";
+import { apiFetch } from "@/lib/apiClient";
+import { API_ROUTES } from "@/lib/config";
 import {
   listResults,
   saveResultsBatch,
@@ -122,7 +124,7 @@ const statusLabel = (status: ResultRowStatus): string => {
 
 export default function ResultsEntryPage() {
   const { user } = useAuth();
-  const [teacherAssignments, setTeacherAssignments] = useState<TeacherAssignments | null>(null);
+  const [teacherDashboard, setTeacherDashboard] = useState<TeacherDashboardResponse | null>(null);
 
   const normalizedRole = String(user?.role ?? "").toLowerCase();
   const isTeacher =
@@ -143,6 +145,7 @@ export default function ResultsEntryPage() {
     useState<Record<string, ClassArmSection[]>>({});
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [components, setComponents] = useState<AssessmentComponent[]>([]);
+  const [subjectAssignments, setSubjectAssignments] = useState<Array<{subject_id: string}>>([]);
 
   const [componentLoading, setComponentLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
@@ -208,32 +211,35 @@ export default function ResultsEntryPage() {
     return sectionsCache[key] ?? [];
   }, [selectedClass, selectedArm, sectionsCache]);
 
-  // Filter subjects based on the selected class and teacher assignments
+  // Filter subjects based on the selected class
   const filteredSubjects = useMemo(() => {
-    // If user is not a teacher, show all available subjects
-    if (!isTeacher || !teacherAssignments) {
-      return subjects;
-    }
-
-    // If no class is selected, don't filter - show all subjects the teacher has access to
+    // If no class is selected, show all available subjects
     if (!selectedClass) {
       return subjects;
     }
 
-    // Get subject IDs for the selected class from teacher's subject assignments
-    // Note: The backend TeacherAccessService already handles the logic:
-    // - If teacher is class teacher for this class: subject_assignments includes ALL subjects for the class
-    // - If teacher is only subject teacher: subject_assignments includes ONLY assigned subjects
-    const subjectIdsForClass = new Set(
-      teacherAssignments.subject_assignments
-        .filter((assignment) => String(assignment.school_class_id) === selectedClass)
-        .map((assignment) => String(assignment.subject_id))
-        .filter(Boolean)
-    );
+    // For teachers: use dashboard data which includes processed assignments
+    if (isTeacher && teacherDashboard) {
+      const subjectIdsForClass = new Set<string>();
 
-    // Filter to show only subjects that are linked to the selected class
-    return subjects.filter((subject) => subjectIdsForClass.has(String(subject.id)));
-  }, [subjects, selectedClass, isTeacher, teacherAssignments]);
+      teacherDashboard.assignments.forEach((assignment) => {
+        if (assignment.class && String(assignment.class.id) === selectedClass) {
+          assignment.subjects.forEach((subject) => {
+            subjectIdsForClass.add(String(subject.id));
+          });
+        }
+      });
+
+      return subjects.filter((subject) => subjectIdsForClass.has(String(subject.id)));
+    }
+
+    // For non-teachers (admins): filter based on subject assignments for the selected class
+    // If class is selected, only show subjects that have been assigned to that class
+    const assignedSubjectIds = new Set(
+      subjectAssignments.map((assignment) => String(assignment.subject_id))
+    );
+    return subjects.filter((subject) => assignedSubjectIds.has(String(subject.id)));
+  }, [subjects, selectedClass, isTeacher, teacherDashboard, subjectAssignments]);
 
   const ensureTerms = useCallback(
     async (sessionId: string): Promise<Term[]> => {
@@ -341,13 +347,14 @@ export default function ResultsEntryPage() {
           ? String(context.current_term_id)
           : "";
 
-        // Fetch teacher assignments if user is a teacher
-        if (isTeacher && contextSessionId && contextTermId) {
+        // Fetch teacher dashboard if user is a teacher
+        // The dashboard includes processed assignments with all subjects for class teachers
+        if (isTeacher) {
           try {
-            const assignments = await getCurrentTeacherAssignments(contextSessionId, contextTermId);
-            setTeacherAssignments(assignments);
+            const dashboard = await fetchTeacherDashboard();
+            setTeacherDashboard(dashboard);
           } catch (error) {
-            console.error("Failed to load teacher assignments", error);
+            console.error("Failed to load teacher dashboard", error);
           }
         }
 
@@ -539,6 +546,35 @@ export default function ResultsEntryPage() {
       cancelled = true;
     };
   }, [selectedClass, selectedArm, selectedSection, ensureSections, updateFilters]);
+
+  // Fetch subject assignments when class changes (for admins)
+  useEffect(() => {
+    // Only fetch for non-teachers (admins)
+    if (isTeacher || !selectedClass) {
+      setSubjectAssignments([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    apiFetch<{ data: Array<{subject_id: string}> }>(
+      `${API_ROUTES.subjectAssignments}?school_class_id=${selectedClass}&per_page=500`
+    )
+      .then((response) => {
+        if (cancelled) return;
+        const assignments = Array.isArray(response.data) ? response.data : [];
+        setSubjectAssignments(assignments);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error('Error fetching subject assignments:', error);
+        setSubjectAssignments([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedClass, isTeacher]);
 
   useEffect(() => {
     if (!selectedSession || !selectedTerm || !selectedSubject) {
