@@ -1150,6 +1150,8 @@ export default function ResultsEntryPage() {
                   ))}
                 </select>
               </div>
+
+              {/* Section selector commented out per request - UI hidden but logic preserved for future use
               <div className="col-xl-3 col-lg-6 col-12 form-group">
                 <label htmlFor="filter-section">Section</label>
                 <select
@@ -1167,6 +1169,8 @@ export default function ResultsEntryPage() {
                   ))}
                 </select>
               </div>
+              */}
+
               <div className="col-xl-3 col-lg-6 col-12 form-group">
                 <label htmlFor="filter-subject">Subject</label>
                 <select
@@ -1260,7 +1264,9 @@ export default function ResultsEntryPage() {
                   <th>Admission No</th>
                   <th>Class</th>
                   <th style={{ width: "120px" }}>Score (0 - 100)</th>
+                  {/* Remark column commented out per request - UI hidden but data preserved
                   <th style={{ width: "280px" }}>Remark</th>
+                  */}
                   <th>Status</th>
                 </tr>
               </thead>
@@ -1301,6 +1307,8 @@ export default function ResultsEntryPage() {
                             }
                           />
                         </td>
+
+                        {/* Remark input/comment UI commented out per request
                         <td>
                           <textarea
                             className="form-control"
@@ -1317,6 +1325,8 @@ export default function ResultsEntryPage() {
                             </p>
                           ) : null}
                         </td>
+                        */}
+
                         <td>
                           <span className={statusBadgeClass(row.status)}>
                             {statusLabel(row.status)}
