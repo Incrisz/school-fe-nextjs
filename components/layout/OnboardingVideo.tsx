@@ -1,11 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const STORAGE_KEY = "onboarding-video-shown";
-const VIDEO_EMBED_URL = "https://www.youtube.com/embed/p0Rdc7g6wzM";
+const DEFAULT_VIDEO = "https://www.youtube.com/embed/p0Rdc7g6wzM";
+// Configure these in your environment (.env.local) as NEXT_PUBLIC_ONBOARDING_VIDEO_ADMIN and NEXT_PUBLIC_ONBOARDING_VIDEO_TEACHER
+const VIDEO_EMBED_URL_ADMIN = process.env.NEXT_PUBLIC_ONBOARDING_VIDEO_ADMIN ?? DEFAULT_VIDEO;
+const VIDEO_EMBED_URL_TEACHER = process.env.NEXT_PUBLIC_ONBOARDING_VIDEO_TEACHER ?? DEFAULT_VIDEO;
 
 export function OnboardingVideo() {
+  const { user } = useAuth();
+
+  const normalizedRole = String(user?.role ?? "").toLowerCase();
+  const isTeacher =
+    normalizedRole.includes("teacher") ||
+    (Array.isArray(user?.roles)
+      ? user?.roles?.some((role) =>
+          String(role?.name ?? "").toLowerCase().includes("teacher"),
+        )
+      : false);
+
+  // Pick URL based on role — admin uses ADMIN env, teachers use TEACHER env.
+  const videoEmbedUrl = isTeacher ? VIDEO_EMBED_URL_TEACHER : VIDEO_EMBED_URL_ADMIN;
+
   const [showModal, setShowModal] = useState(false);
   const [videoStarted, setVideoStarted] = useState(false);
 
@@ -67,8 +85,8 @@ export function OnboardingVideo() {
             {videoStarted ? (
               <div className="embed-responsive embed-responsive-16by9">
                 <iframe
-                  src={`${VIDEO_EMBED_URL}?autoplay=1`}
-                  title="Dashboard onboarding video"
+                  src={`${videoEmbedUrl}?autoplay=1`}
+                  title={isTeacher ? "Teacher onboarding video" : "Admin onboarding video"}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
