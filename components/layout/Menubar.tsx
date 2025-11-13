@@ -64,6 +64,19 @@ export function Menubar() {
     return isTeacher ? "/v25/staff-dashboard" : "/v10/dashboard";
   }, [user]);
 
+  // Profile link should point to teacher profile for teachers, admin profile otherwise
+  const profileHref = useMemo(() => {
+    const normalizedRole = String((user as { role?: string | null })?.role ?? "").toLowerCase();
+    const isTeacher =
+      normalizedRole.includes("teacher") ||
+      (Array.isArray((user as { roles?: Array<{ name?: string | null }> })?.roles)
+        ? (user as { roles?: Array<{ name?: string | null }> }).roles?.some((role) =>
+            String(role?.name ?? "").toLowerCase().includes("teacher"),
+          )
+        : false);
+    return isTeacher ? "/v25/profile" : "/v10/profile";
+  }, [user]);
+
   const searchableItems = useMemo(() => {
     const quickLinks = sidebarQuickLinks.map((link) => ({
       label: link.label,
@@ -267,7 +280,7 @@ export function Menubar() {
               <div className="item-content">
                 <ul className="settings-list">
                   <li>
-                    <Link href="/v10/profile" className="d-flex align-items-center">
+                    <Link href={profileHref} className="d-flex align-items-center">
                       <i className="flaticon-user" />
                       <span className="ml-2">My Profile</span>
                     </Link>
