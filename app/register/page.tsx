@@ -4,12 +4,13 @@ import Link from "next/link";
 import Image, { type ImageLoader } from "next/image";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BACKEND_URL } from "@/lib/config";
+import { BACKEND_URL, SCHOOL_REGISTRATION_ENABLED } from "@/lib/config";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const registrationEnabled = SCHOOL_REGISTRATION_ENABLED;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -89,6 +90,39 @@ export default function RegisterPage() {
       setSubmitting(false);
     }
   };
+
+  if (!registrationEnabled) {
+    return (
+      <>
+        <div className="login-page-wrap">
+          <div className="login-page-content">
+            <div className="login-box text-center py-5 px-4">
+              <div className="item-logo mb-4">
+                <Image
+                  src="/assets/img/logo2.png"
+                  alt="logo"
+                  width={160}
+                  height={60}
+                  unoptimized
+                  loader={passthroughLoader}
+                  style={{ width: "auto", height: "auto" }}
+                />
+              </div>
+              <h4>School Registration Unavailable</h4>
+              <p className="text-muted mt-3 mb-4">
+                Self-registration for new schools is currently disabled. Please contact
+                the platform administrator if you need to onboard a new school.
+              </p>
+              <Link href="/login" className="register-login-action">
+                Return to Login
+              </Link>
+            </div>
+          </div>
+        </div>
+        <style jsx>{styles}</style>
+      </>
+    );
+  }
 
   return (
     <>
