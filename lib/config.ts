@@ -14,6 +14,16 @@ export const SCHOOL_REGISTRATION_ENABLED = ["on", "true", "1"].includes(
   SCHOOL_REGISTRATION_FLAG,
 );
 
+const EMAIL_VERIFICATION_FLAG = (
+  process.env.NEXT_PUBLIC_EMAIL_VERIFICATION ?? "off"
+)
+  .toString()
+  .trim()
+  .toLowerCase();
+export const EMAIL_VERIFICATION_ENABLED = ["on", "true", "1"].includes(
+  EMAIL_VERIFICATION_FLAG,
+);
+
 export function resolveBackendUrl(path: string | null | undefined): string {
   if (!path) {
     return "";

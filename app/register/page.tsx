@@ -4,13 +4,14 @@ import Link from "next/link";
 import Image, { type ImageLoader } from "next/image";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BACKEND_URL, SCHOOL_REGISTRATION_ENABLED } from "@/lib/config";
+import { BACKEND_URL, EMAIL_VERIFICATION_ENABLED, SCHOOL_REGISTRATION_ENABLED } from "@/lib/config";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegisterPage() {
   const router = useRouter();
   const registrationEnabled = SCHOOL_REGISTRATION_ENABLED;
+  const verificationEnabled = EMAIL_VERIFICATION_ENABLED;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -167,6 +168,12 @@ export default function RegisterPage() {
               <div className="row">
                 <div className="col-12">
                   <h4>Register Your School</h4>
+                  {verificationEnabled ? (
+                    <p className="text-muted small mb-3">
+                      After submitting the form we will send a verification link to the email
+                      address provided. You will need to confirm it before logging in.
+                    </p>
+                  ) : null}
                 </div>
                 <div className="col-lg-6 col-12 form-group">
                   <label htmlFor="name">School Name *</label>

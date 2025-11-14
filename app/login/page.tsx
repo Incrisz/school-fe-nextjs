@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image, { type ImageLoader } from "next/image";
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SCHOOL_REGISTRATION_ENABLED } from "@/lib/config";
+import { EMAIL_VERIFICATION_ENABLED, SCHOOL_REGISTRATION_ENABLED } from "@/lib/config";
 import { LoginForm } from "./login-form";
 
 const passthroughLoader: ImageLoader = ({ src }) => src;
@@ -16,6 +16,7 @@ function LoginPageContent() {
   const registrationSuccess =
     searchParams?.get("status") === "registration-success";
   const registrationEnabled = SCHOOL_REGISTRATION_ENABLED;
+  const verificationEnabled = EMAIL_VERIFICATION_ENABLED;
 
   useEffect(() => {
     if (!registrationSuccess) {
@@ -67,7 +68,9 @@ function LoginPageContent() {
                 className="alert alert-success registration-success-alert"
                 role="alert"
               >
-                School Registered successfully!
+                {verificationEnabled
+                  ? "School registered successfully! Check your email for a verification link to activate your account."
+                  : "School registered successfully!"}
               </div>
             ) : null}
             <div className="item-logo">
