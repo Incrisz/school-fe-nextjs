@@ -34,10 +34,12 @@ export async function apiFetch<T = unknown>(
   });
 
   if (!response.ok) {
-    // For 403 (Forbidden) errors, return empty data instead of throwing
-    // This allows UI to hide elements gracefully without showing errors
-    if (response.status === 403 && authScope === "staff") {
-      // Return appropriate empty value based on expected return type
+    // For 403 (Forbidden) errors on read-only staff requests, return empty data
+    // instead of throwing. For mutations (POST/PUT/DELETE), always throw so
+    // the UI can surface proper error feedback.
+    const method = (rest.method ?? "GET").toString().toUpperCase();
+    const isReadOnlyMethod = method === "GET" || method === "HEAD";
+    if (response.status === 403 && authScope === "staff" && isReadOnlyMethod) {
       return [] as T;
     }
     
