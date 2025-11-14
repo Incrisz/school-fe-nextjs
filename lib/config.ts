@@ -57,6 +57,7 @@ export const API_ROUTES = {
   assessmentComponents: "/api/v1/settings/assessment-components",
   results: "/api/v1/results",
   resultsBulkPrint: "/api/v1/results/bulk/print",
+  resultPinCardsPrint: "/api/v1/result-pins/cards/print",
   resultBatch: "/api/v1/results/batch",
   resultPins: "/api/v1/result-pins",
   permissions: "/api/v1/permissions",
