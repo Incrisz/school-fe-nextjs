@@ -109,6 +109,12 @@ export const menuSections: MenuSection[] = [
       { label: "Add Student", href: "/v14/add-student", requiredPermissions: "students.create" },
       { label: "Bulk Result Print", href: "/v14/bulk-results", requiredPermissions: "students.results.print" },
       { label: "Result Entry", href: "/v19/results-entry", requiredPermissions: "results.enter" },
+      {
+        label: "Class Skill Ratings",
+        href: "/v14/class-skill-ratings",
+        // Allow either skills.manage (admins) or results.enter (teachers) to see it
+        requiredPermissions: ["skills.manage", "results.enter"],
+      },
       { label: "Bulk Upload", href: "/v22/bulk-student-upload", requiredPermissions: "students.import" },
       { label: "Student Promotion", href: "/v20/student-promotion", requiredPermissions: "students.promote" },
       { label: "Promotion Reports", href: "/v20/promotion-reports", requiredPermissions: "promotions.history" },
