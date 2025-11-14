@@ -24,6 +24,16 @@ export const EMAIL_VERIFICATION_ENABLED = ["on", "true", "1"].includes(
   EMAIL_VERIFICATION_FLAG,
 );
 
+const DEMO_MODE_FLAG = (
+  process.env.NEXT_PUBLIC_DEMO_MODE ?? "off"
+)
+  .toString()
+  .trim()
+  .toLowerCase();
+export const DEMO_MODE_ENABLED = ["on", "true", "1"].includes(
+  DEMO_MODE_FLAG,
+);
+
 export function resolveBackendUrl(path: string | null | undefined): string {
   if (!path) {
     return "";

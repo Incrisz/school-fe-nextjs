@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { DEMO_MODE_ENABLED } from "@/lib/config";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -34,6 +35,7 @@ export function LoginForm() {
   const [submitting, setSubmitting] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const demoModeEnabled = DEMO_MODE_ENABLED;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -78,6 +80,18 @@ export function LoginForm() {
     }
     router.replace(nextPath);
   }, [loading, user, router, nextPath]);
+
+  const applyDemoCredentials = (kind: "admin" | "staff") => {
+    if (kind === "admin") {
+      setEmail("demo@gmail.com");
+      setPassword("12345678");
+    } else {
+      setEmail("chika-nnaji@demointernational.edu.ng");
+      setPassword("password");
+    }
+    setError(null);
+    setEmailError(null);
+  };
 
   return (
     <form id="login-form" className="login-form" onSubmit={handleSubmit}>
@@ -166,6 +180,29 @@ export function LoginForm() {
           {submitting ? "Signing in..." : "Login"}
         </button>
       </div>
+      {demoModeEnabled ? (
+        <div className="form-group mt-2">
+          <label className="text-muted small d-block mb-1">
+            Demo logins
+          </label>
+          <div className="d-flex flex-wrap" style={{ gap: "0.5rem" }}>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary"
+              onClick={() => applyDemoCredentials("admin")}
+            >
+              Admin: demo@gmail.com / 12345678
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary"
+              onClick={() => applyDemoCredentials("staff")}
+            >
+              Staff: chika-nnaji@demointernational.edu.ng / password
+            </button>
+          </div>
+        </div>
+      ) : null}
       <p className="text-center text-muted small">
         Are you a student?{" "}
         <Link href="/student-login" className="font-weight-bold">

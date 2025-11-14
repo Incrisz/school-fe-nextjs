@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { studentLogin } from "@/lib/studentAuth";
+import { DEMO_MODE_ENABLED } from "@/lib/config";
 
 const styles = `
 .student-login .student-cta {
@@ -92,6 +93,7 @@ export default function StudentLoginPage() {
   const [password, setPassword] = useState("123456");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const demoModeEnabled = DEMO_MODE_ENABLED;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -113,6 +115,12 @@ export default function StudentLoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyDemoCredentials = () => {
+    setAdmissionNo("DIS002-2024/2025/1");
+    setPassword("123456");
+    setError(null);
   };
 
   return (
@@ -187,6 +195,20 @@ export default function StudentLoginPage() {
             >
               {loading ? "Signing in…" : "Login"}
             </button>
+            {demoModeEnabled ? (
+              <div className="form-group mt-3">
+                <label className="text-muted small d-block mb-1">
+                  Demo login
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={applyDemoCredentials}
+                >
+                  DIS002-2024/2025/1 / 123456
+                </button>
+              </div>
+            ) : null}
           </form>
         </div>
         <p className="student-footer text-center mt-4 small">
