@@ -4,6 +4,16 @@ export const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ||
   DEFAULT_BACKEND_URL;
 
+const SCHOOL_REGISTRATION_FLAG = (
+  process.env.NEXT_PUBLIC_SCHOOL_REGISTRATION ?? "off"
+)
+  .toString()
+  .trim()
+  .toLowerCase();
+export const SCHOOL_REGISTRATION_ENABLED = ["on", "true", "1"].includes(
+  SCHOOL_REGISTRATION_FLAG,
+);
+
 export function resolveBackendUrl(path: string | null | undefined): string {
   if (!path) {
     return "";
