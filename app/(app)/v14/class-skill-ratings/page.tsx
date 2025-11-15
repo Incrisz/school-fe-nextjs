@@ -700,7 +700,14 @@ export default function ClassSkillRatingsPage() {
                   <th className="sticky-col sticky-col-1">Student</th>
                   {visibleSkillTypes.map((type) => (
                     <th key={type.id} style={{ width: "120px" }}>
-                      {type.category ? `${type.category} – ${type.name}` : type.name}
+                      {type.category ? (
+                        <>
+                          <div>{type.category}</div>
+                          <div className="text-muted small">{type.name}</div>
+                        </>
+                      ) : (
+                        <div>{type.name}</div>
+                      )}
                     </th>
                   ))}
                 </tr>
