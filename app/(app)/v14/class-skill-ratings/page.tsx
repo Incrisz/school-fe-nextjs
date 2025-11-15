@@ -645,7 +645,6 @@ export default function ClassSkillRatingsPage() {
                 <tr>
                   <th className="sticky-col sticky-col-0">#</th>
                   <th className="sticky-col sticky-col-1">Student</th>
-                  <th className="sticky-col sticky-col-2">Admission No</th>
                   {skillTypes.map((type) => (
                     <th key={type.id}>
                       {type.category ? `${type.category} – ${type.name}` : type.name}
@@ -656,11 +655,11 @@ export default function ClassSkillRatingsPage() {
               <tbody>
                 {loadingGrid ? (
                   <tr>
-                    <td colSpan={3 + skillTypes.length}>Loading students and skills…</td>
+                    <td colSpan={2 + skillTypes.length}>Loading students and skills…</td>
                   </tr>
                 ) : !students.length ? (
                   <tr>
-                    <td colSpan={3 + skillTypes.length}>
+                    <td colSpan={2 + skillTypes.length}>
                       Select filters and click &ldquo;Load Students &amp; Skills&rdquo; to begin.
                     </td>
                   </tr>
@@ -675,9 +674,6 @@ export default function ClassSkillRatingsPage() {
                       <tr key={String(student.id)}>
                         <td className="sticky-col sticky-col-0">{index + 1}</td>
                         <td className="sticky-col sticky-col-1">{fullName}</td>
-                        <td className="sticky-col sticky-col-2">
-                          {student.admission_no ?? "—"}
-                        </td>
                         {skillTypes.map((type) => {
                           const cell = studentRow[String(type.id)] ?? { value: "" };
                           return (
@@ -720,6 +716,7 @@ export default function ClassSkillRatingsPage() {
       <style jsx>{`
         .class-skill-table-wrapper {
           position: relative;
+          overflow-x: auto;
         }
         .class-skill-table-wrapper .sticky-col {
           position: sticky;
@@ -735,11 +732,6 @@ export default function ClassSkillRatingsPage() {
         .class-skill-table-wrapper td.sticky-col-1 {
           left: 80px;
           min-width: 220px;
-        }
-        .class-skill-table-wrapper th.sticky-col-2,
-        .class-skill-table-wrapper td.sticky-col-2 {
-          left: 320px;
-          min-width: 160px;
         }
         .class-skill-table-wrapper thead th.sticky-col {
           z-index: 3;
