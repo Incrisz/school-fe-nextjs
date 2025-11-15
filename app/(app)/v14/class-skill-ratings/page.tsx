@@ -24,11 +24,11 @@ import {
 import {
   createStudentSkillRating,
   listStudentSkillRatings,
-  listStudentSkillTypes,
   updateStudentSkillRating,
   type StudentSkillRating,
   type StudentSkillType,
 } from "@/lib/studentSkillRatings";
+import { listSkillTypes, type SkillType as RawSkillType } from "@/lib/skills";
 import {
   fetchTeacherDashboard,
   type TeacherDashboardResponse,
@@ -41,6 +41,7 @@ interface FiltersState {
   classId: string;
   armId: string;
   sectionId: string;
+  skillTypeId: string;
 }
 
 const emptyFilters: FiltersState = {
@@ -49,6 +50,7 @@ const emptyFilters: FiltersState = {
   classId: "",
   armId: "",
   sectionId: "",
+  skillTypeId: "",
 };
 
 const ratingOptions = ["1", "2", "3", "4", "5"];
@@ -102,6 +104,32 @@ export default function ClassSkillRatingsPage() {
   const selectedClass = filters.classId;
   const selectedArm = filters.armId;
   const selectedSection = filters.sectionId;
+  const selectedSkillTypeId = filters.skillTypeId;
+
+  // Load skill types once so the Skill dropdown is available without needing
+  // to click "Load Students & Skills" first.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const types = await listSkillTypes();
+        if (cancelled) return;
+        const mapped: StudentSkillType[] = types.map((type: RawSkillType) => ({
+          id: String(type.id),
+          name: type.name,
+          description: type.description ?? null,
+          skill_category_id: type.skill_category_id,
+          category: type.category ?? null,
+        }));
+        setSkillTypes(mapped);
+      } catch (err) {
+        console.error("Unable to load skill types", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const terms = useMemo(() => {
     if (!selectedSession) {
@@ -142,6 +170,15 @@ export default function ClassSkillRatingsPage() {
     const key = `${selectedClass}:${selectedArm}`;
     return sectionsCache[key] ?? [];
   }, [selectedClass, selectedArm, sectionsCache]);
+
+  const visibleSkillTypes = useMemo(() => {
+    if (!selectedSkillTypeId) {
+      return [];
+    }
+    return skillTypes.filter(
+      (type) => String(type.id) === String(selectedSkillTypeId),
+    );
+  }, [skillTypes, selectedSkillTypeId]);
 
   const ensureTerms = useCallback(
     async (sessionId: string) => {
@@ -294,6 +331,8 @@ export default function ClassSkillRatingsPage() {
           } else if (field === "armId") {
             next.armId = value;
             next.sectionId = "";
+          } else if (field === "skillTypeId") {
+            next.skillTypeId = value;
           } else {
             (next as any)[field] = value;
           }
@@ -357,18 +396,14 @@ export default function ClassSkillRatingsPage() {
         return;
       }
 
-      const firstStudent = studentList[0];
-      const [types, ratingLists] = await Promise.all([
-        listStudentSkillTypes(firstStudent.id),
-        Promise.all(
-          studentList.map((student) =>
-            listStudentSkillRatings(student.id, {
-              session_id: selectedSession,
-              term_id: selectedTerm,
-            }),
-          ),
+      const ratingLists = await Promise.all(
+        studentList.map((student) =>
+          listStudentSkillRatings(student.id, {
+            session_id: selectedSession,
+            term_id: selectedTerm,
+          }),
         ),
-      ]);
+      );
 
       const nextGrid: RatingsGrid = {};
 
@@ -380,7 +415,7 @@ export default function ClassSkillRatingsPage() {
         });
 
         const studentRow: Record<string, RatingCell> = {};
-        types.forEach((type) => {
+        skillTypes.forEach((type) => {
           const rating = bySkill.get(String(type.id));
           studentRow[String(type.id)] = {
             ratingId: rating ? String(rating.id) : undefined,
@@ -392,11 +427,10 @@ export default function ClassSkillRatingsPage() {
       });
 
       setStudents(studentList);
-      setSkillTypes(types);
       setRatingsGrid(nextGrid);
       setFeedbackKind("info");
       setFeedback(
-        "Loaded students and skill ratings. Update the values and click Save to apply changes.",
+        "Loaded students and skill ratings. Select a skill, update the values, and click Save to apply changes.",
       );
     } catch (err) {
       console.error("Unable to load class skill ratings", err);
@@ -449,9 +483,9 @@ export default function ClassSkillRatingsPage() {
       return;
     }
 
-    if (!students.length || !skillTypes.length) {
+    if (!students.length || !visibleSkillTypes.length) {
       setFeedbackKind("info");
-      setFeedback("Load students and skills before saving.");
+      setFeedback("Load students and select a skill before saving.");
       return;
     }
 
@@ -459,7 +493,7 @@ export default function ClassSkillRatingsPage() {
 
     students.forEach((student) => {
       const studentRow = ratingsGrid[String(student.id)] ?? {};
-      skillTypes.forEach((type) => {
+      visibleSkillTypes.forEach((type) => {
         const cell = studentRow[String(type.id)];
         const value = cell?.value?.trim() ?? "";
         if (!value) {
@@ -494,7 +528,7 @@ export default function ClassSkillRatingsPage() {
 
     if (!tasks.length) {
       setFeedbackKind("info");
-      setFeedback("No ratings to save.");
+      setFeedback("No ratings to save for the selected skill.");
       return;
     }
 
@@ -615,6 +649,25 @@ export default function ClassSkillRatingsPage() {
                 ))}
               </select>
             </div>
+            <div className="col-xl-3 col-lg-6 col-12 form-group">
+              <label htmlFor="skill-filter-skill">Skill</label>
+              <select
+                id="skill-filter-skill"
+                className="form-control"
+                value={selectedSkillTypeId}
+                onChange={handleFilterChange("skillTypeId")}
+                disabled={!skillTypes.length}
+              >
+                <option value="">Select skill</option>
+                {skillTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.category
+                      ? `${type.category} – ${type.name}`
+                      : type.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             {/* Class Section filter intentionally hidden for now */}
             <div className="col-xl-3 col-lg-6 col-12 form-group d-flex align-items-end">
               <button
@@ -645,8 +698,8 @@ export default function ClassSkillRatingsPage() {
                 <tr>
                   <th className="sticky-col sticky-col-0">#</th>
                   <th className="sticky-col sticky-col-1">Student</th>
-                  {skillTypes.map((type) => (
-                    <th key={type.id}>
+                  {visibleSkillTypes.map((type) => (
+                    <th key={type.id} style={{ width: "120px" }}>
                       {type.category ? `${type.category} – ${type.name}` : type.name}
                     </th>
                   ))}
@@ -655,11 +708,13 @@ export default function ClassSkillRatingsPage() {
               <tbody>
                 {loadingGrid ? (
                   <tr>
-                    <td colSpan={2 + skillTypes.length}>Loading students and skills…</td>
+                    <td colSpan={2 + visibleSkillTypes.length}>
+                      Loading students and skills…
+                    </td>
                   </tr>
                 ) : !students.length ? (
                   <tr>
-                    <td colSpan={2 + skillTypes.length}>
+                    <td colSpan={2 + visibleSkillTypes.length}>
                       Select filters and click &ldquo;Load Students &amp; Skills&rdquo; to begin.
                     </td>
                   </tr>
@@ -674,14 +729,15 @@ export default function ClassSkillRatingsPage() {
                       <tr key={String(student.id)}>
                         <td className="sticky-col sticky-col-0">{index + 1}</td>
                         <td className="sticky-col sticky-col-1">{fullName}</td>
-                        {skillTypes.map((type) => {
+                        {visibleSkillTypes.map((type) => {
                           const cell = studentRow[String(type.id)] ?? { value: "" };
                           return (
                             <td key={type.id}>
                               <select
-                                className="form-control"
+                                className="form-control form-control-sm"
                                 value={cell.value}
                                 onChange={handleRatingChange(student.id, String(type.id))}
+                                style={{ maxWidth: "100px" }}
                               >
                                 <option value="">—</option>
                                 {ratingOptions.map((option) => (
@@ -706,7 +762,9 @@ export default function ClassSkillRatingsPage() {
               type="button"
               className="btn-fill-lg btn-gradient-yellow btn-hover-bluedark"
               onClick={handleSaveAll}
-              disabled={saving || !students.length || !skillTypes.length}
+              disabled={
+                saving || !students.length || !visibleSkillTypes.length
+              }
             >
               {saving ? "Saving…" : "Save All Ratings"}
             </button>
@@ -735,6 +793,17 @@ export default function ClassSkillRatingsPage() {
         }
         .class-skill-table-wrapper thead th.sticky-col {
           z-index: 3;
+        }
+        @media (max-width: 767.98px) {
+          .class-skill-table-wrapper .sticky-col {
+            position: static;
+          }
+          .class-skill-table-wrapper th.sticky-col-0,
+          .class-skill-table-wrapper td.sticky-col-0,
+          .class-skill-table-wrapper th.sticky-col-1,
+          .class-skill-table-wrapper td.sticky-col-1 {
+            left: auto;
+          }
         }
       `}</style>
     </>
