@@ -535,9 +535,9 @@ export default function ClassSkillRatingsPage() {
     setSaving(true);
     try {
       await Promise.all(tasks);
+      await handleLoadGrid();
       setFeedbackKind("success");
       setFeedback("Skill ratings saved successfully for the class.");
-      await handleLoadGrid();
     } catch (err) {
       console.error("Unable to save class skill ratings", err);
       setFeedbackKind("danger");
@@ -702,11 +702,13 @@ export default function ClassSkillRatingsPage() {
                     <th key={type.id} style={{ width: "120px" }}>
                       {type.category ? (
                         <>
-                          <div>{type.category}</div>
+                          <div className="text-muted small font-weight-bold">
+                            {type.category}
+                          </div>
                           <div className="text-muted small">{type.name}</div>
                         </>
                       ) : (
-                        <div>{type.name}</div>
+                        <div className="text-muted small">{type.name}</div>
                       )}
                     </th>
                   ))}
