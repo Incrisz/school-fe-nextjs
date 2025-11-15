@@ -2,22 +2,126 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useStudentAuth } from "@/contexts/StudentAuthContext";
 
 const STORAGE_KEY = "onboarding-video-shown";
 const DEFAULT_VIDEO = "https://www.youtube.com/embed/p0Rdc7g6wzM";
-// Configure these in your environment as:
-// NEXT_PUBLIC_ONBOARDING_VIDEO_ADMIN, NEXT_PUBLIC_ONBOARDING_VIDEO_TEACHER, NEXT_PUBLIC_ONBOARDING_VIDEO_STUDENT
+// Configure these in your environment (.env) as NEXT_PUBLIC_ONBOARDING_VIDEO_ADMIN and NEXT_PUBLIC_ONBOARDING_VIDEO_TEACHER
 const VIDEO_EMBED_URL_ADMIN =
   process.env.NEXT_PUBLIC_ONBOARDING_VIDEO_ADMIN ?? DEFAULT_VIDEO;
 const VIDEO_EMBED_URL_TEACHER =
   process.env.NEXT_PUBLIC_ONBOARDING_VIDEO_TEACHER ?? DEFAULT_VIDEO;
-const VIDEO_EMBED_URL_STUDENT =
-  process.env.NEXT_PUBLIC_ONBOARDING_VIDEO_STUDENT ?? DEFAULT_VIDEO;
 
-function FloatingVideoStyles() {
+export function OnboardingVideo() {
+  const { user } = useAuth();
+
+  const normalizedRole = String(user?.role ?? "").toLowerCase();
+  const isTeacher =
+    normalizedRole.includes("teacher") ||
+    (Array.isArray(user?.roles)
+      ? user?.roles?.some((role) =>
+          String(role?.name ?? "").toLowerCase().includes("teacher"),
+        )
+      : false);
+
+  // Pick URL based on role — admin uses ADMIN env, teachers use TEACHER env.
+  const videoEmbedUrl = isTeacher
+    ? VIDEO_EMBED_URL_TEACHER
+    : VIDEO_EMBED_URL_ADMIN;
+
+  const [showModal, setShowModal] = useState(false);
+  const [videoStarted, setVideoStarted] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const hasShown = sessionStorage.getItem(STORAGE_KEY);
+    if (!hasShown) {
+      setShowModal(true);
+      sessionStorage.setItem(STORAGE_KEY, new Date().toISOString());
+    }
+  }, []);
+
+  const closeModal = () => {
+    setShowModal(false);
+    setVideoStarted(false);
+  };
+
+  const openModal = () => {
+    setShowModal(true);
+    setVideoStarted(false);
+  };
+
   return (
-    <style jsx>{`
+    <>
+      {!showModal ? (
+        <button
+          type="button"
+          className="floating-video-launch"
+          onClick={openModal}
+          aria-label="Open onboarding video"
+        >
+          <span className="floating-video-badge">Video Guide</span>
+          <i className="fas fa-play" aria-hidden="true" />
+        </button>
+      ) : null}
+
+      {showModal ? (
+        <div
+          className="floating-video-card"
+          role="dialog"
+          aria-modal="true"
+          onClick={closeModal}
+        >
+          <div
+            className="floating-video-content"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="floating-video-close"
+              aria-label="Close video"
+              onClick={closeModal}
+            >
+              &times;
+            </button>
+
+            {videoStarted ? (
+              <div className="embed-responsive embed-responsive-16by9">
+                <iframe
+                  src={`${videoEmbedUrl}?autoplay=1`}
+                  title={
+                    isTeacher
+                      ? "Teacher onboarding video"
+                      : "Admin onboarding video"
+                  }
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <div className="floating-video-thumbnail">
+                <div className="floating-video-text">
+                  <h3>Quick Onboarding Tour</h3>
+                  <p>
+                    Learn the essentials of the dashboard in under two minutes.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="floating-video-play"
+                  onClick={() => setVideoStarted(true)}
+                  aria-label="Play onboarding video"
+                >
+                  <i className="fas fa-play" aria-hidden="true" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      <style jsx>{`
         .floating-video-launch {
           position: fixed;
           bottom: 24px;
@@ -108,7 +212,11 @@ function FloatingVideoStyles() {
           content: "";
           position: absolute;
           inset: 0;
-          background: linear-gradient(135deg, rgba(4, 44, 84, 0.78), rgba(64, 118, 255, 0.6));
+          background: linear-gradient(
+            135deg,
+            rgba(4, 44, 84, 0.78),
+            rgba(64, 118, 255, 0.6)
+          );
           z-index: 0;
         }
 
@@ -160,229 +268,7 @@ function FloatingVideoStyles() {
           }
         }
       `}</style>
-  );
-}
-
-function useSharedOnboardingVideoState(videoEmbedUrl: string, title: string) {
-
-  const [showModal, setShowModal] = useState(false);
-  const [videoStarted, setVideoStarted] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const hasShown = sessionStorage.getItem(STORAGE_KEY);
-    if (!hasShown) {
-      setShowModal(true);
-      sessionStorage.setItem(STORAGE_KEY, new Date().toISOString());
-    }
-  }, []);
-
-  const closeModal = () => {
-    setShowModal(false);
-    setVideoStarted(false);
-  };
-
-  const openModal = () => {
-    setShowModal(true);
-    setVideoStarted(false);
-  };
-
-  return {
-    showModal,
-    setShowModal,
-    videoStarted,
-    setVideoStarted,
-    videoEmbedUrl,
-    title,
-  };
-}
-
-export function OnboardingVideo() {
-  const { user } = useAuth();
-
-  const normalizedRole = String(user?.role ?? "").toLowerCase();
-  const isTeacher =
-    normalizedRole.includes("teacher") ||
-    (Array.isArray(user?.roles)
-      ? user?.roles?.some((role) =>
-          String(role?.name ?? "").toLowerCase().includes("teacher"),
-        )
-      : false);
-
-  const { showModal, setShowModal, videoStarted, setVideoStarted, videoEmbedUrl, title } =
-    useSharedOnboardingVideoState(
-      isTeacher ? VIDEO_EMBED_URL_TEACHER : VIDEO_EMBED_URL_ADMIN,
-      isTeacher ? "Teacher onboarding video" : "Admin onboarding video",
-    );
-
-  const closeModal = () => {
-    setShowModal(false);
-    setVideoStarted(false);
-  };
-
-  const openModal = () => {
-    setShowModal(true);
-    setVideoStarted(false);
-  };
-
-  return (
-    <>
-      {!showModal ? (
-        <button
-          type="button"
-          className="floating-video-launch"
-          onClick={openModal}
-          aria-label="Open onboarding video"
-        >
-          <span className="floating-video-badge">Video Guide</span>
-          <i className="fas fa-play" aria-hidden="true" />
-        </button>
-      ) : null}
-
-      {showModal ? (
-        <div
-          className="floating-video-card"
-          role="dialog"
-          aria-modal="true"
-          onClick={closeModal}
-        >
-          <div
-            className="floating-video-content"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="floating-video-close"
-              aria-label="Close video"
-              onClick={closeModal}
-            >
-              &times;
-            </button>
-
-            {videoStarted ? (
-              <div className="embed-responsive embed-responsive-16by9">
-                <iframe
-                  src={`${videoEmbedUrl}?autoplay=1`}
-                  title={title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            ) : (
-              <div className="floating-video-thumbnail">
-                <div className="floating-video-text">
-                  <h3>Quick Onboarding Tour</h3>
-                  <p>Learn the essentials of the dashboard in under two minutes.</p>
-                </div>
-                <button
-                  type="button"
-                  className="floating-video-play"
-                  onClick={() => setVideoStarted(true)}
-                  aria-label="Play onboarding video"
-                >
-                  <i className="fas fa-play" aria-hidden="true" />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : null}
-
-      <FloatingVideoStyles />
     </>
   );
 }
 
-export function StudentOnboardingVideo() {
-  const { student } = useStudentAuth();
-
-  const { showModal, setShowModal, videoStarted, setVideoStarted, videoEmbedUrl, title } =
-    useSharedOnboardingVideoState(
-      VIDEO_EMBED_URL_STUDENT,
-      "Student onboarding video",
-    );
-
-  const closeModal = () => {
-    setShowModal(false);
-    setVideoStarted(false);
-  };
-
-  const openModal = () => {
-    setShowModal(true);
-    setVideoStarted(false);
-  };
-
-  if (!student) {
-    return null;
-  }
-
-  return (
-    <>
-      {!showModal ? (
-        <button
-          type="button"
-          className="floating-video-launch"
-          onClick={openModal}
-          aria-label="Open onboarding video"
-        >
-          <span className="floating-video-badge">Video Guide</span>
-          <i className="fas fa-play" aria-hidden="true" />
-        </button>
-      ) : null}
-
-      {showModal ? (
-        <div
-          className="floating-video-card"
-          role="dialog"
-          aria-modal="true"
-          onClick={closeModal}
-        >
-          <div
-            className="floating-video-content"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="floating-video-close"
-              aria-label="Close video"
-              onClick={closeModal}
-            >
-              &times;
-            </button>
-
-            {videoStarted ? (
-              <div className="embed-responsive embed-responsive-16by9">
-                <iframe
-                  src={`${videoEmbedUrl}?autoplay=1`}
-                  title={title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            ) : (
-              <div className="floating-video-thumbnail">
-                <div className="floating-video-text">
-                  <h3>Quick Onboarding Tour</h3>
-                  <p>Learn how to use your student dashboard in a few minutes.</p>
-                </div>
-                <button
-                  type="button"
-                  className="floating-video-play"
-                  onClick={() => setVideoStarted(true)}
-                  aria-label="Play onboarding video"
-                >
-                  <i className="fas fa-play" aria-hidden="true" />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : null}
-
-      {/* Styles are shared with the admin/teacher video above */}
-      <FloatingVideoStyles />
-    </>
-  );
-}
