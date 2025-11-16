@@ -309,8 +309,7 @@ function AssignmentCard({
             </div>
           </div>
           <div className="text-muted small mb-2">
-            Session: {assignment.session?.name ?? "—"} · Term:{" "}
-            {assignment.term?.name ?? "—"}
+            Session: {assignment.session?.name ?? "—"}
           </div>
           <div>
             <strong className="d-block mb-2">Subjects</strong>
