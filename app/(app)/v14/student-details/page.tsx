@@ -476,19 +476,19 @@ export default function StudentDetailsPage() {
     }
     params.set("student_id", studentId);
     const sessionCandidate =
-      selectedSession ||
       (schoolContext.current_session_id != null
         ? String(schoolContext.current_session_id)
-        : student?.current_session_id != null
-          ? String(student.current_session_id)
-          : "");
+        : selectedSession ||
+          (student?.current_session_id != null
+            ? String(student.current_session_id)
+            : ""));
     const termCandidate =
-      selectedTerm ||
       (schoolContext.current_term_id != null
         ? String(schoolContext.current_term_id)
-        : student?.current_term_id != null
-          ? String(student.current_term_id)
-          : "");
+        : selectedTerm ||
+          (student?.current_term_id != null
+            ? String(student.current_term_id)
+            : ""));
     if (sessionCandidate) {
       params.set("session_id", sessionCandidate);
     }
@@ -680,31 +680,23 @@ export default function StudentDetailsPage() {
     if (!student) {
       return;
     }
-    setSelectedSession((prev) => {
-      if (prev) {
-        return prev;
-      }
-      if (schoolContext.current_session_id != null) {
-        return String(schoolContext.current_session_id);
-      }
-      if (student.current_session_id != null) {
-        return String(student.current_session_id);
-      }
-      return "";
-    });
-    setSelectedTerm((prev) => {
-      if (prev) {
-        return prev;
-      }
-      if (schoolContext.current_term_id != null) {
-        return String(schoolContext.current_term_id);
-      }
-      if (student.current_term_id != null) {
-        return String(student.current_term_id);
-      }
-      return "";
-    });
-  }, [student, schoolContext.current_session_id, schoolContext.current_term_id]);
+    if (schoolContext.current_session_id != null) {
+      setSelectedSession(String(schoolContext.current_session_id));
+    } else if (!selectedSession && student.current_session_id != null) {
+      setSelectedSession(String(student.current_session_id));
+    }
+    if (schoolContext.current_term_id != null) {
+      setSelectedTerm(String(schoolContext.current_term_id));
+    } else if (!selectedTerm && student.current_term_id != null) {
+      setSelectedTerm(String(student.current_term_id));
+    }
+  }, [
+    student,
+    selectedSession,
+    selectedTerm,
+    schoolContext.current_session_id,
+    schoolContext.current_term_id,
+  ]);
 
   useEffect(() => {
     listSessions()
