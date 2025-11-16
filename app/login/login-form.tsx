@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, MouseEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { DEMO_MODE_ENABLED } from "@/lib/config";
+import { apiFetch } from "@/lib/apiClient";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -80,6 +81,38 @@ export function LoginForm() {
     }
     router.replace(nextPath);
   }, [loading, user, router, nextPath]);
+
+  const handleForgotPassword = async (event: MouseEvent<HTMLSpanElement>) => {
+    event.preventDefault();
+    setError(null);
+    setEmailError(null);
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setEmailError("Enter your email address first, then click “Forgot Password?” again.");
+      return;
+    }
+    if (!emailPattern.test(trimmedEmail)) {
+      setEmailError("Please enter a valid email address before requesting a reset.");
+      return;
+    }
+
+    try {
+      await apiFetch("/api/v1/password/forgot", {
+        method: "POST",
+        body: JSON.stringify({ email: trimmedEmail }),
+        skipAuth: true,
+      });
+      alert(
+        "If an account exists for this email, a password reset link has been sent.",
+      );
+    } catch (err) {
+      console.error("Unable to request password reset", err);
+      alert(
+        "Unable to request password reset at this time. Please try again later.",
+      );
+    }
+  };
 
   const applyDemoCredentials = (kind: "admin" | "staff") => {
     if (kind === "admin") {
@@ -169,7 +202,13 @@ export function LoginForm() {
             Remember Me
           </label>
         </div>
-        <span className="forgot-btn text-muted">Forgot Password?</span>
+        <span
+          className="forgot-btn text-muted"
+          style={{ cursor: "pointer" }}
+          onClick={handleForgotPassword}
+        >
+          Forgot Password?
+        </span>
       </div>
       <div className="form-group">
         <button
